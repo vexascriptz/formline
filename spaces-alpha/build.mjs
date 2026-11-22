@@ -1,0 +1,11 @@
+import { build } from 'esbuild';
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
+await mkdir('dist',{recursive:true});
+const result=await build({entryPoints:['sdk-bridge.mjs'],bundle:true,platform:'browser',format:'esm',target:'es2022',write:false,minify:true,legalComments:'inline'});
+const sdk=result.outputFiles[0].text;
+const source=await readFile('worker.mjs','utf8');
+const target="if(p!=='/')return new Response('Not found',{status:404});";
+if(!source.includes(target))throw Error('Worker entry changed; update SDK routing.');
+const output=source.replace('sdkBundled:false','sdkBundled:true').replace(target,"if(p==='/sdk-bridge.js')return new Response(request.method==='HEAD'?null:sdkBundle,{headers:{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});"+target);
+await writeFile('dist/worker.mjs','const sdkBundle='+JSON.stringify(sdk)+';\n'+output);
+console.log('Built dist/worker.mjs with the official SDK. No tokens or other credentials included.');
