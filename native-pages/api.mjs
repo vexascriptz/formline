@@ -75,6 +75,8 @@ export async function nativeOperation(d,e,owner,h){
   await assertServer(e,doc,owner,discord);
   const locked=await one(e,"UPDATE native_publications SET status='editing',updated=? WHERE id=? AND owner_id=? AND status='published' RETURNING id",now(),row.id,owner);
   if(!locked)return err('Publication is already being edited.',409);
+  const current=await one(e,'SELECT document FROM native_publications WHERE id=? AND owner_id=?',row.id,owner);
+  if(current.document!==row.document){await run(e,"UPDATE native_publications SET status='published' WHERE id=? AND owner_id=? AND status='editing'",row.id,owner);return err('This publication changed. Refresh and try again.',409);}
   const addresses=JSON.parse(row.addresses);
   const adapter={
    authorize:async(g,c)=>assertServer(e,{guild:g,channel:c},owner,discord),
