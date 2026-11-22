@@ -3,7 +3,7 @@ const id=x=>typeof x==='string'&&/^\d{17,20}$/.test(x);
 const hex=(x,n)=>typeof x==='string'&&new RegExp('^[0-9a-f]{'+n+'}$').test(x);
 const encoder=new TextEncoder();
 const b64=x=>btoa(String.fromCharCode(...new Uint8Array(x))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-const unb64=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'=='.slice((s.length+3)%4)),c=>c.charCodeAt(0));
+const unb64=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
 const digest=async s=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(s))),x=>x.toString(16).padStart(2,'0')).join('');
 async function cipherKey(e){const bits=await crypto.subtle.digest('SHA-256',encoder.encode('Formline Discord OAuth storage v1:'+e.LICENSE_SECRET));return crypto.subtle.importKey('raw',bits,'AES-GCM',false,['encrypt','decrypt'])}
 async function encrypt(e,obj){const iv=crypto.getRandomValues(new Uint8Array(12));const bytes=encoder.encode(JSON.stringify(obj));return b64(iv)+'.'+b64(await crypto.subtle.encrypt({name:'AES-GCM',iv},await cipherKey(e),bytes));}
@@ -105,6 +105,6 @@ export async function finishBrowserPair(r,e,user,token,h){
 }
 export function connectedPage(status){
  const message=status==='connected'?'Discord connected. Return to Formline.':status==='mismatch'?'Use the same Discord account that owns your Formline license.':status==='scope'?'Allow Formline to view your servers, then try again.':'Connection expired. Start again from the app.';
- const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;':'&quot;'}[c]));
+ const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  return '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Formline · Connect Discord</title><style>body{background:#111113;color:#f2f1ee;font:16px system-ui;margin:0;display:grid;place-items:center;min-height:100vh;padding:24px}main{max-width:430px}p{color:#aaa;line-height:1.6}h1{font-size:36px;letter-spacing:-.05em}</style><main><p>formline.</p><h1>'+esc(status==='connected'?'You’re connected.':'Connection not finished.')+'</h1><p>'+esc(message)+'</p></main></html>';
 }
