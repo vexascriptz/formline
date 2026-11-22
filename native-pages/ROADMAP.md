@@ -9,8 +9,8 @@ No Spaces or Activities. Native Discord bot, existing desktop toolkit, Daki pres
 - [x] Validation for disconnected pages, invalid references, oversized content.
 - [x] Journal hooks, uncertain-create detection, cleanup reporting, verification hooks.
 - [x] Mock regression checks; repeatable Node test suite (node --test native-pages/publisher.test.mjs).
-- [ ] Production owner-only API, durable journal and idempotent job serialization; authoritative Discord permissions and publication ownership.
-- [ ] Desktop integration: responsive one-page-at-a-time design, preview mode, page map, publishing and repair.
+- [x] Owner-only Cloudflare Native Pages API with activation checks, server ownership, idempotent request IDs and D1 publication journal (deployed; live publish untested).\n- [ ] Verify real Discord creation, rollback and edit outcomes in a dedicated test channel; harden cross-request job recovery.
+- [x] Experimental Formline 1.6.0 desktop integration: responsive Pages, Preview, Publish, Published; packaged source and installer.\n- [ ] Windows UI and installer acceptance tests, owner channel live publish and repair flows.
 - [ ] Discord test-server verification on desktop/mobile, restart/retry tests, permission failure tests; no claim of bug-free operation.
 
 ## Release 2: Connected experiences
