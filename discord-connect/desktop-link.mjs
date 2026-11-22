@@ -55,7 +55,7 @@ export async function desktopLink(d,e,customer,h){
  if(action==='status'){
   const connected=await h.one(e,'SELECT customer_id,expires FROM desktop_connections WHERE customer_id=?',customer);
   const user=connected?await h.one(e,'SELECT id,username,display_name,avatar FROM customers WHERE id=?',customer):null;
-  return {connected:!!connected,user:user?{id:user.id,username:user.username,display_name:user.display_name,avatar:user.avatar}:null,expires:connected?.expires||null};
+  const bot=await h.one(e,'SELECT status,guilds,channels,event,updated FROM bot_status WHERE id=1');return {connected:!!connected,user:user?{id:user.id,username:user.username,display_name:user.display_name,avatar:user.avatar}:null,expires:connected?.expires||null,bot:bot?{online:bot.status==='online'&&bot.updated>h.now()-180,guilds:bot.guilds,channels:bot.channels,updated:bot.updated,event:bot.event}:null};
  }
  if(action==='disconnect'){
   await h.run(e,'DELETE FROM desktop_connections WHERE customer_id=?',customer);
