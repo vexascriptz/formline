@@ -4,14 +4,14 @@ import {validatePages,pagePayload,publishPages,refreshPages,updateVariables} fro
 const hex32=x=>typeof x==='string'&&/^[0-9a-f]{32}$/.test(x);
 const snow=x=>typeof x==='string'&&/^\d{17,20}$/.test(x);
 const err=(message,status=400)=>({error:message,status});
-async function assertServer(e,d,owner,discord){
+async function assertServer(e,d,owner,discord,isAdmin){
  if(!snow(d.guild)||!snow(d.channel))throw Error('Invalid server or channel.');
- const [guild,channel]=await Promise.all([discord(e,'/guilds/'+d.guild),discord(e,'/channels/'+d.channel)]);
- if(guild.owner_id!==owner||channel.guild_id!==d.guild||![0,5].includes(channel.type))throw Error('Choose a text channel in a server you own.');
+ const [allowed,guild,channel]=await Promise.all([isAdmin(e,owner,d.guild),discord(e,'/guilds/'+d.guild),discord(e,'/channels/'+d.channel)]);
+ if(!allowed||channel.guild_id!==d.guild||![0,5].includes(channel.type))throw Error('You must have Administrator permission in this server and the bot must access the selected text channel.');
  return channel;
 }
 export async function nativeOperation(d,e,owner,h){
- const {one,all,run,now,random,limit,discord}=h;
+ const {one,all,run,now,random,limit,discord,isAdmin}=h;
  const action=d?.action;
  if(action==='preview'){
   const doc=validatePages(d.document),sample=new Map(doc.pages.map(p=>[p.id,{channel:doc.channel,message:'123456789012345678'}]));
@@ -32,7 +32,7 @@ export async function nativeOperation(d,e,owner,h){
   const doc=validatePages(d.document);
   const previous=await one(e,'SELECT id,status,entry_url FROM native_publications WHERE owner_id=? AND request_id=?',owner,d.request_id);
   if(previous)return {ok:true,existing:true,id:previous.id,status:previous.status,entry:previous.entry_url};
-  await assertServer(e,doc,owner,discord);
+  await assertServer(e,doc,owner,discord,isAdmin);
   if(!await limit(e,'native-publish:'+owner,3,3600))return err('Native page publish limit reached.',429);
   const id=random(16);
   // Unique (owner, request_id) is a separate idempotency barrier.
@@ -45,7 +45,7 @@ export async function nativeOperation(d,e,owner,h){
    await run(e,'UPDATE native_publications SET addresses=?,status=?,error=?,updated=? WHERE id=? AND owner_id=?',JSON.stringify(addresses),status,j.phase==='failed'?'Publish failed; verify cleanup before retrying.':null,now(),id,owner);
   };
   const adapter={
-   authorize:async(g,c)=>assertServer(e,{guild:g,channel:c},owner,discord),
+   authorize:async(g,c)=>assertServer(e,{guild:g,channel:c},owner,discord,isAdmin),
    journal,
    create:async(c,payload)=>discord(e,'/channels/'+c+'/messages',{method:'POST',body:JSON.stringify(payload)}),
    edit:async(c,m,payload)=>discord(e,'/channels/'+c+'/messages/'+m,{method:'PATCH',body:JSON.stringify(payload)}),
@@ -72,14 +72,14 @@ export async function nativeOperation(d,e,owner,h){
   if(!await limit(e,'native-edit:'+owner,8,300))return err('Edit limit reached.',429);
   const doc=JSON.parse(row.document),patched=updateVariables(doc,d.patch);
   if(!patched.affected.length)return {ok:true,updated:[],entry:row.entry_url};
-  await assertServer(e,doc,owner,discord);
+  await assertServer(e,doc,owner,discord,isAdmin);
   const locked=await one(e,"UPDATE native_publications SET status='editing',updated=? WHERE id=? AND owner_id=? AND status='published' RETURNING id",now(),row.id,owner);
   if(!locked)return err('Publication is already being edited.',409);
   const current=await one(e,'SELECT document FROM native_publications WHERE id=? AND owner_id=?',row.id,owner);
   if(current.document!==row.document){await run(e,"UPDATE native_publications SET status='published' WHERE id=? AND owner_id=? AND status='editing'",row.id,owner);return err('This publication changed. Refresh and try again.',409);}
   const addresses=JSON.parse(row.addresses);
   const adapter={
-   authorize:async(g,c)=>assertServer(e,{guild:g,channel:c},owner,discord),
+   authorize:async(g,c)=>assertServer(e,{guild:g,channel:c},owner,discord,isAdmin),
    verify:async(c,m,pageId)=>{
     if(addresses[pageId]?.message!==m||addresses[pageId]?.channel!==c)throw Error('Address mismatch');
     const message=await discord(e,'/channels/'+c+'/messages/'+m);
