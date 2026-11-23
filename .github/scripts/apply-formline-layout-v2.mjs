@@ -69,7 +69,9 @@ try{
  }
  if(!report)throw Error('Layout report not found after bot restart');
  if(report.cleanup?.error||report.cleanup?.warnings?.length)throw Error('Community cleanup incomplete: '+JSON.stringify(report.cleanup).slice(0,300));
- if(report.communityV4?.error||report.communityV4?.warnings?.length)throw Error('Community v4 incomplete: '+JSON.stringify(report.communityV4).slice(0,300));
+ if(report.communityV4?.warnings?.length)console.error('COMMUNITY V4 WARNINGS:',JSON.stringify(report.communityV4.warnings));
+ if(report.communityV4?.error)console.error('COMMUNITY V4 ERROR:',report.communityV4.error);
+ if(report.communityV4?.error||report.communityV4?.warnings?.length)throw Error('Community v4 incomplete; see warnings above');
  console.log('FORMLINE COMMUNITY CLEANUP:',JSON.stringify(report.cleanup));
  console.log('FORMLINE COMMUNITY V4:',JSON.stringify(report.communityV4));
  console.log('PIP ROTATING STATUSES:',JSON.stringify(report.rotatingCustomStatuses));
