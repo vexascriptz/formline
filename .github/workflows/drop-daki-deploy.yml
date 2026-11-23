@@ -1,0 +1,35 @@
+name: Deploy drop backend to dedicated Daki split
+on:
+  push:
+    branches: [drop-daki]
+    paths:
+      - '.github/workflows/drop-daki-deploy.yml'
+      - '.github/scripts/deploy-drop-daki.mjs'
+      - 'app.py'
+      - 'requirements.txt'
+      - 'install.sh'
+      - 'bootstrap_deno.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: drop-daki-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Daki deploy script
+        run: node --check .github/scripts/deploy-drop-daki.mjs
+      - name: Upload backend and start dedicated drop split
+        env:
+          DAKI_API_KEY: ${{ secrets.DAKI_API_KEY }}
+        run: node .github/scripts/deploy-drop-daki.mjs
