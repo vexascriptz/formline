@@ -37,9 +37,10 @@ const original=await read('pip-runtime.mjs');
 const runtime=readFileSync('discord app/pip-runtime.mjs','utf8');
 const layout=readFileSync('discord app/formline-layout-v2.mjs','utf8');
 const cleanup=readFileSync('discord app/formline-community-cleanup.mjs','utf8');
+const layoutV4=readFileSync('discord app/formline-community-layout-v4.mjs','utf8');
 if(!original.includes('installPipRuntime')||!runtime.includes('installPipRuntime'))throw Error('Unexpected Pip runtime module');
 if(!runtime.includes('arrangeFormline')||runtime.includes('function setupServer(guild)'))throw Error('Old channel auto-setup still present');
-syntax(runtime,'.mjs');syntax(layout,'.mjs');syntax(cleanup,'.mjs');
+syntax(runtime,'.mjs');syntax(layout,'.mjs');syntax(cleanup,'.mjs');syntax(layoutV4,'.mjs');
 const backups={runtime:'pip-runtime.mjs.before-formline-layout-v2-'+Date.now()+'.txt'};
 let modified=false,restarted=false;
 try{
@@ -49,6 +50,8 @@ try{
  if(digest(await read('formline-layout-v2.mjs'))!==digest(layout))throw Error('Layout module upload mismatched');
  await write('formline-community-cleanup.mjs',cleanup);
  if(digest(await read('formline-community-cleanup.mjs'))!==digest(cleanup))throw Error('Cleanup module upload mismatched');
+ await write('formline-community-layout-v4.mjs',layoutV4);
+ if(digest(await read('formline-community-layout-v4.mjs'))!==digest(layoutV4))throw Error('Layout v4 upload mismatched');
  await write('pip-runtime.mjs',runtime);
  modified=true;
  if(digest(await read('pip-runtime.mjs'))!==digest(runtime))throw Error('Pip runtime upload mismatched');
@@ -59,13 +62,16 @@ try{
   await sleep(3000);
   try{
    const r=JSON.parse(await read('pip-runtime-report.json'));
-   if(r.installed&&r.layout?.version===2&&r.cleanup){report=r;break;}
+   if(r.installed&&r.layout?.version===2&&r.cleanup&&r.communityV4){report=r;break;}
    if(r.layout?.error)throw Error(r.layout.error);
   }catch(e){if(i===24)throw e;}
  }
  if(!report)throw Error('Layout report not found after bot restart');
  if(report.cleanup?.error||report.cleanup?.warnings?.length)throw Error('Community cleanup incomplete: '+JSON.stringify(report.cleanup).slice(0,300));
+ if(report.communityV4?.error||report.communityV4?.warnings?.length)throw Error('Community v4 incomplete: '+JSON.stringify(report.communityV4).slice(0,300));
  console.log('FORMLINE COMMUNITY CLEANUP:',JSON.stringify(report.cleanup));
+ console.log('FORMLINE COMMUNITY V4:',JSON.stringify(report.communityV4));
+ console.log('PIP ROTATING STATUSES:',JSON.stringify(report.rotatingCustomStatuses));
  console.log('FORMLINE LAYOUT V2 VERIFIED');
  console.log('GUILD:',report.layout.guildName);
  console.log('CREATED:',JSON.stringify(report.layout.created));
