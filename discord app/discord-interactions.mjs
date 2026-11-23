@@ -1,6 +1,6 @@
 // Formline Discord commands. Credentials stay in Worker secrets.
 const encoder=new TextEncoder();
-const invite='https://discord.gg/YKKB8vebKu';
+const invite='https://discord.gg/3EuqCaRcCY';
 export const commands=[
  ...[['formline','Open the Formline portal'],['license','Check your license privately'],['beta','Request free Formline beta access'],['support','Find Formline support'],['help','Browse Formline commands'],['status','Check Formline service availability']].map(([name,description])=>({name,description,type:1,integration_types:[1],contexts:[0,1,2]})),
  {name:'formline-setup',description:'Post the Formline access panel in this server',type:1,integration_types:[0],contexts:[0],default_member_permissions:'32'}
