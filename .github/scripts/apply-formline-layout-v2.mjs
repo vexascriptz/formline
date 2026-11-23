@@ -63,7 +63,7 @@ try{
   await sleep(3000);
   try{
    const r=JSON.parse(await read('pip-runtime-report.json'));
-   if(r.generatedAt>=deploymentStarted&&r.installed&&r.layout?.version===2&&r.cleanup&&r.communityV4){report=r;break;}
+   if(r.generatedAt>=deploymentStarted&&r.installed&&r.layout?.version===2&&r.cleanup&&r.communityV4&&r.polishV6){report=r;break;}
    if(r.generatedAt>=deploymentStarted&&r.layout?.error)throw Error(r.layout.error);
   }catch(e){if(i===69)throw e;}
  }
@@ -74,6 +74,8 @@ try{
  if(report.communityV4?.error||report.communityV4?.warnings?.length)throw Error('Community v4 incomplete; see warnings above');
  console.log('FORMLINE COMMUNITY CLEANUP:',JSON.stringify(report.cleanup));
  console.log('FORMLINE COMMUNITY V4:',JSON.stringify(report.communityV4));
+ if(report.polishV6?.error||report.polishV6?.warnings?.length)throw Error('Polish v6 incomplete: '+JSON.stringify(report.polishV6).slice(0,1200));
+ console.log('FORMLINE POLISH V6:',JSON.stringify(report.polishV6));
  console.log('PIP ROTATING STATUSES:',JSON.stringify(report.rotatingCustomStatuses));
  console.log('CONTENT CLEANUP V5:',JSON.stringify(report.contentV5));
  if(report.contentV5?.error)throw Error('Content cleanup failed: '+report.contentV5.error);
