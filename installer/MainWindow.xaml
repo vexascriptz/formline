@@ -1,186 +1,232 @@
 <Window x:Class="DropInstaller.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="drop. — Setup"
-        Width="820" Height="520" MinWidth="820" MinHeight="520"
+        Title="drop. setup" Width="920" Height="585" MinWidth="920" MinHeight="585"
         WindowStyle="None" ResizeMode="NoResize" AllowsTransparency="True"
         Background="Transparent" WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI" SnapsToDevicePixels="True" UseLayoutRounding="True">
   <Window.Resources>
-    <SolidColorBrush x:Key="Accent" Color="#B999FF"/>
-    <SolidColorBrush x:Key="Subtle" Color="#9692A3"/>
-    <Style x:Key="MainButton" TargetType="Button">
-      <Setter Property="Background" Value="#B999FF"/>
-      <Setter Property="Foreground" Value="#181020"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
+    <SolidColorBrush x:Key="Text" Color="#F4F1F7"/>
+    <SolidColorBrush x:Key="Muted" Color="#A09AA8"/>
+    <SolidColorBrush x:Key="Accent" Color="#B89CF4"/>
+    <Style x:Key="PrimaryButton" TargetType="Button">
+      <Setter Property="Background" Value="#B89CF4"/>
+      <Setter Property="Foreground" Value="#1D1426"/>
       <Setter Property="FontSize" Value="13"/>
-      <Setter Property="Padding" Value="23,14"/>
-      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Padding" Value="22,14"/>
       <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Template">
         <Setter.Value><ControlTemplate TargetType="Button">
-          <Border x:Name="ButtonBg" Background="{TemplateBinding Background}" CornerRadius="11" Padding="{TemplateBinding Padding}">
+          <Border x:Name="Surface" Background="{TemplateBinding Background}" CornerRadius="9" Padding="{TemplateBinding Padding}">
             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
           <ControlTemplate.Triggers>
-            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonBg" Property="Background" Value="#CFB8FF"/></Trigger>
-            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ButtonBg" Property="Opacity" Value="0.45"/></Trigger>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="#CBB5F7"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value="0.45"/></Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value>
       </Setter>
     </Style>
-    <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource MainButton}">
-      <Setter Property="Background" Value="#24222D"/>
-      <Setter Property="Foreground" Value="#E3DDEB"/>
+    <Style x:Key="SoftButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+      <Setter Property="Background" Value="#22202A"/>
+      <Setter Property="Foreground" Value="#E5DFEC"/>
       <Setter Property="Template">
         <Setter.Value><ControlTemplate TargetType="Button">
-          <Border x:Name="ButtonBg" Background="{TemplateBinding Background}" CornerRadius="11" BorderThickness="1" BorderBrush="#36323E" Padding="{TemplateBinding Padding}">
+          <Border x:Name="Surface" Background="{TemplateBinding Background}" BorderBrush="#36323F" BorderThickness="1" CornerRadius="9" Padding="{TemplateBinding Padding}">
             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
           <ControlTemplate.Triggers>
-            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonBg" Property="Background" Value="#353040"/></Trigger>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="#312C3A"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value="0.4"/></Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value>
       </Setter>
     </Style>
-    <Style x:Key="BareButton" TargetType="Button">
+    <Style x:Key="WindowButton" TargetType="Button">
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="#A49BAE"/>
       <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Foreground" Value="#918A9A"/>
       <Setter Property="Cursor" Value="Hand"/>
-      <Setter Property="FontSize" Value="16"/>
-      <Setter Property="Width" Value="38"/>
-      <Setter Property="Height" Value="34"/>
+      <Setter Property="Width" Value="36"/><Setter Property="Height" Value="34"/>
+      <Setter Property="FontSize" Value="17"/>
       <Setter Property="Template">
         <Setter.Value><ControlTemplate TargetType="Button">
-          <Border x:Name="Bg" Background="Transparent" CornerRadius="8">
-            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+          <Border x:Name="Surface" CornerRadius="7" Background="{TemplateBinding Background}">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
           <ControlTemplate.Triggers>
-            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bg" Property="Background" Value="#28242F"/><Setter Property="Foreground" Value="White"/></Trigger>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="#25212D"/><Setter Property="Foreground" Value="White"/></Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value>
       </Setter>
     </Style>
   </Window.Resources>
-  <Border Background="#0E0D13" CornerRadius="20" BorderBrush="#35303D" BorderThickness="1" Margin="12">
-    <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="8" Opacity="0.52" Color="#000000"/></Border.Effect>
-    <Grid ClipToBounds="True">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="216"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <Border Grid.Column="0" Background="#17141E" CornerRadius="19,0,0,19">
-        <Grid Margin="27,34,24,26">
-          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <Border Background="#B999FF" Width="32" Height="32" CornerRadius="11" Margin="0,0,12,0">
-              <TextBlock Text="↓" FontFamily="Segoe UI" Foreground="#21162C" FontSize="23" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-4,0,0"/>
+  <Border Background="#111016" BorderBrush="#36313B" BorderThickness="1" CornerRadius="17" Margin="12">
+    <Border.Effect><DropShadowEffect Color="Black" Opacity="0.5" BlurRadius="27" ShadowDepth="7"/></Border.Effect>
+    <Grid>
+      <Grid.RowDefinitions><RowDefinition Height="78"/><RowDefinition Height="*"/><RowDefinition Height="84"/></Grid.RowDefinitions>
+      <!-- Minimal title bar -->
+      <Grid Grid.Row="0" MouseLeftButtonDown="Titlebar_MouseLeftButtonDown">
+        <Border Background="#211B2A" Width="34" Height="34" CornerRadius="10" HorizontalAlignment="Left" Margin="45,0,0,0">
+          <TextBlock Text="↓" Foreground="#BFA5F5" FontWeight="Bold" FontSize="25" TextAlignment="Center" VerticalAlignment="Center" Margin="0,-4,0,0"/>
+        </Border>
+        <TextBlock FontSize="25" FontWeight="Bold" Foreground="#F2EDF7" VerticalAlignment="Center" Margin="90,0,0,0">
+          <Run Text="drop"/><Run Text="." Foreground="#B89CF4"/>
+        </TextBlock>
+        <TextBlock Text="SETUP" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" Foreground="#726C7C"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,29,0">
+          <Button Style="{StaticResource WindowButton}" Content="−" Click="Minimize_Click"/>
+          <Button Style="{StaticResource WindowButton}" Content="×" Click="Close_Click"/>
+        </StackPanel>
+      </Grid>
+      <!-- Each operation has its own page and visual -->
+      <Grid Grid.Row="1" Margin="46,24,46,4">
+        <Grid x:Name="PreparePage">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="360"/></Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0" Margin="0,22,32,0">
+            <TextBlock Text="01 / GET READY" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Make some room&#10;for drop." Foreground="{StaticResource Text}" FontSize="40" FontWeight="SemiBold" LineHeight="49" Margin="0,0,0,17"/>
+            <TextBlock Text="We'll put the extension files in a permanent folder and open your browser for you." TextWrapping="Wrap" FontSize="14" Foreground="{StaticResource Muted}" LineHeight="23" Width="385" HorizontalAlignment="Left"/>
+            <Border Background="#1B1821" BorderBrush="#35303E" BorderThickness="1" Padding="15,13" CornerRadius="9" HorizontalAlignment="Left" Margin="0,29,0,0">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="✓" Foreground="{StaticResource Accent}" FontWeight="Bold" Margin="0,0,12,0"/>
+                <TextBlock Text="No administrator permissions needed" Foreground="#D7CFDE" FontSize="12"/>
+              </StackPanel>
             </Border>
-            <TextBlock FontFamily="Segoe UI" FontSize="26" FontWeight="Bold" Foreground="#F5F1FB" VerticalAlignment="Center">
-              <Run Text="drop"/><Run Text="." Foreground="#B999FF"/>
-            </TextBlock>
+            <TextBlock x:Name="PrepareError" Visibility="Collapsed" Foreground="#F2A0A8" FontSize="12" TextWrapping="Wrap" Margin="0,15,0,0"/>
           </StackPanel>
-          <StackPanel Grid.Row="1" Margin="0,95,0,0">
-            <TextBlock Text="SETUP" Foreground="#867B91" FontSize="10" FontWeight="Bold" Margin="7,0,0,24"/>
-            <StackPanel x:Name="SidebarOne" Orientation="Horizontal" Margin="0,0,0,25">
-              <Border x:Name="DotOne" Background="#B999FF" Width="28" Height="28" CornerRadius="9" Margin="0,0,12,0">
-                <TextBlock Text="1" Foreground="#1B1323" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          <Border Grid.Column="1" Background="#19161F" BorderBrush="#352D3D" BorderThickness="1" CornerRadius="15" Padding="30,28" Margin="0,7,0,12">
+            <StackPanel>
+              <Border Background="#2D243B" Width="64" Height="64" CornerRadius="15" HorizontalAlignment="Left" Margin="0,0,0,24">
+                <TextBlock Text="▣" FontSize="36" Foreground="#BEA4F0" TextAlignment="Center" VerticalAlignment="Center"/>
               </Border>
-              <TextBlock Text="Prepare" x:Name="LabelOne" Foreground="#F5F1FB" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+              <TextBlock Text="drop / extension" Foreground="#F4EEF9" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,19"/>
+              <TextBlock Text="manifest.json" Foreground="#C5B4D5" FontFamily="Consolas" FontSize="12" Margin="8,0,0,13"/>
+              <TextBlock Text="main.js" Foreground="#C5B4D5" FontFamily="Consolas" FontSize="12" Margin="8,0,0,13"/>
+              <TextBlock Text="popup.html" Foreground="#C5B4D5" FontFamily="Consolas" FontSize="12" Margin="8,0,0,17"/>
+              <Border Height="1" Background="#38303D" Margin="0,2,0,18"/>
+              <TextBlock Text="Only 3 files, installed locally." Foreground="#94899F" FontSize="11"/>
             </StackPanel>
-            <StackPanel x:Name="SidebarTwo" Orientation="Horizontal" Margin="0,0,0,25">
-              <Border x:Name="DotTwo" Background="#302A39" Width="28" Height="28" CornerRadius="9" Margin="0,0,12,0">
-                <TextBlock x:Name="NumTwo" Text="2" Foreground="#9D90AC" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-              </Border>
-              <TextBlock Text="Add to Chrome" x:Name="LabelTwo" Foreground="#897F94" FontSize="13" VerticalAlignment="Center"/>
-            </StackPanel>
-            <StackPanel x:Name="SidebarThree" Orientation="Horizontal">
-              <Border x:Name="DotThree" Background="#302A39" Width="28" Height="28" CornerRadius="9" Margin="0,0,12,0">
-                <TextBlock x:Name="NumThree" Text="3" Foreground="#9D90AC" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-              </Border>
-              <TextBlock Text="Finish" x:Name="LabelThree" Foreground="#897F94" FontSize="13" VerticalAlignment="Center"/>
-            </StackPanel>
-          </StackPanel>
-          <StackPanel Grid.Row="2">
-            <Border Background="#24202B" CornerRadius="8" Padding="10,7" HorizontalAlignment="Left">
-              <TextBlock Text="WINDOWS  •  v0.9" FontSize="10" FontWeight="SemiBold" Foreground="#AAA0B6"/>
-            </Border>
-            <TextBlock Text="A small app. That's all." Foreground="#716779" FontSize="11" Margin="0,13,0,0"/>
-          </StackPanel>
+          </Border>
         </Grid>
-      </Border>
-      <Grid Grid.Column="1">
-        <Grid.RowDefinitions><RowDefinition Height="66"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="Titlebar_MouseLeftButtonDown">
-          <TextBlock Text="INSTALLER" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="40,0,0,0" Foreground="#77707F" FontSize="10" FontWeight="SemiBold"/>
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,21,0">
-            <Button Content="−" Click="Minimize_Click" Style="{StaticResource BareButton}" ToolTip="Minimize"/>
-            <Button Content="×" Click="Close_Click" Style="{StaticResource BareButton}" ToolTip="Close"/>
+        <Grid x:Name="BrowserPage" Visibility="Collapsed">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="370"/></Grid.ColumnDefinitions>
+          <StackPanel Margin="0,19,36,0">
+            <TextBlock Text="02 / OPEN BROWSER" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Straight to&#10;Extensions." Foreground="{StaticResource Text}" FontSize="39" LineHeight="47" FontWeight="SemiBold" Margin="0,0,0,17"/>
+            <TextBlock Text="drop. opens your default compatible browser and goes directly to its Extensions page." TextWrapping="Wrap" FontSize="14" Foreground="{StaticResource Muted}" LineHeight="23" Width="374" HorizontalAlignment="Left"/>
+            <Button x:Name="RetryBrowserButton" Content="↗   Open Extensions again" Click="OpenChrome_Click" Style="{StaticResource SoftButton}" HorizontalAlignment="Left" Margin="0,26,0,0"/>
+            <TextBlock x:Name="ChromeStatus" FontSize="11" TextWrapping="Wrap" Foreground="#B9A8D3" LineHeight="17" Width="370" HorizontalAlignment="Left" Margin="0,17,0,0"/>
           </StackPanel>
+          <Border Grid.Column="1" Background="#1C1922" BorderBrush="#41354C" BorderThickness="1" CornerRadius="13" Margin="0,27,0,41">
+            <Grid>
+              <Grid.RowDefinitions><RowDefinition Height="38"/><RowDefinition Height="40"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+              <Border Background="#26212B" CornerRadius="12,12,0,0"/>
+              <TextBlock Grid.Row="0" Text="●  ●  ●        Extensions" FontSize="10" Foreground="#ADA1BB" Margin="16,13,0,0"/>
+              <Border Grid.Row="1" Background="#131116" CornerRadius="7" Margin="12,6">
+                <TextBlock x:Name="BrowserIllustrationUrl" Text="chrome://extensions" Foreground="#D4C1EE" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" Margin="12,0"/>
+              </Border>
+              <StackPanel Grid.Row="2" Margin="20,21">
+                <TextBlock Text="Extensions" FontSize="19" FontWeight="SemiBold" Foreground="#EEE7F5" Margin="0,0,0,19"/>
+                <Border Background="#28232E" Padding="12,15" CornerRadius="8"><TextBlock Text="Manage your extensions" Foreground="#A99DB3" FontSize="11"/></Border>
+                <Border Background="#28232E" Padding="12,15" CornerRadius="8" Margin="0,10,0,0"><TextBlock Text="Developer mode" Foreground="#A99DB3" FontSize="11"/></Border>
+              </StackPanel>
+            </Grid>
+          </Border>
         </Grid>
-        <Grid Grid.Row="1" Margin="42,25,48,32">
-          <Grid x:Name="PrepareView">
-            <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <StackPanel Grid.Row="0">
-              <TextBlock Text="01  /  PREPARE" Foreground="#B999FF" FontSize="10" FontWeight="Bold" Margin="0,0,0,19"/>
-              <TextBlock Text="Install drop." Foreground="#F6F2FA" FontSize="39" FontWeight="SemiBold" Margin="0,0,0,9"/>
-              <TextBlock Text="Everything you need, nothing you don't." Foreground="#AAA2B3" FontSize="14" Margin="0,0,0,28"/>
-              <Border Background="#1A1821" BorderBrush="#2F2938" BorderThickness="1" CornerRadius="12" Padding="18,17">
-                <StackPanel Orientation="Horizontal">
-                  <Border Background="#2B2236" Width="42" Height="42" CornerRadius="11" Margin="0,0,14,0">
-                    <TextBlock Text="↓" FontSize="24" FontWeight="Bold" Foreground="#B999FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Grid x:Name="DeveloperPage" Visibility="Collapsed">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="370"/></Grid.ColumnDefinitions>
+          <StackPanel Margin="0,22,34,0">
+            <TextBlock Text="03 / ENABLE DEVELOPER MODE" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="One little&#10;switch." Foreground="{StaticResource Text}" FontSize="40" LineHeight="47" FontWeight="SemiBold" Margin="0,0,0,17"/>
+            <TextBlock Text="On the Extensions page, turn on Developer mode in the top-right corner." FontSize="14" Foreground="{StaticResource Muted}" LineHeight="23" TextWrapping="Wrap" Width="374" HorizontalAlignment="Left"/>
+            <TextBlock Text="This reveals the Load unpacked button. Chrome uses this setting for local, unreviewed extensions." FontSize="12" Foreground="#8F8699" LineHeight="20" TextWrapping="Wrap" Width="363" HorizontalAlignment="Left" Margin="0,26,0,0"/>
+          </StackPanel>
+          <Border Grid.Column="1" Background="#1C1922" BorderBrush="#41354C" BorderThickness="1" CornerRadius="13" Margin="0,27,0,47">
+            <StackPanel Margin="22,24">
+              <TextBlock Text="EXTENSIONS" Foreground="#91859D" FontSize="10" FontWeight="Bold" Margin="0,0,0,25"/>
+              <Border CornerRadius="11" Background="#2A2334" BorderBrush="#775D94" BorderThickness="1" Padding="18,22">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="48"/></Grid.ColumnDefinitions>
+                  <StackPanel><TextBlock Text="Developer mode" FontSize="14" FontWeight="SemiBold" Foreground="#F0E9F8"/>
+                    <TextBlock Text="Turn this on" FontSize="11" Foreground="#B69BC9" Margin="0,9,0,0"/></StackPanel>
+                  <Border Grid.Column="1" Background="#B89CF4" Width="45" Height="24" CornerRadius="13" VerticalAlignment="Center">
+                    <Ellipse Width="18" Height="18" Fill="#FFFFFF" HorizontalAlignment="Right" Margin="0,0,4,0"/>
                   </Border>
-                  <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Chrome extension" Foreground="#F2EDF7" FontSize="13" FontWeight="SemiBold"/>
-                    <TextBlock Text="Three files  ·  Installed locally" Foreground="#8E8499" FontSize="11" Margin="0,5,0,0"/>
-                  </StackPanel>
-                </StackPanel>
-              </Border>
-              <TextBlock x:Name="PrepareError" TextWrapping="Wrap" Foreground="#FFB6BA" FontSize="11" Margin="0,14,0,0" Visibility="Collapsed"/>
-            </StackPanel>
-            <StackPanel Grid.Row="1" Orientation="Vertical">
-              <Button x:Name="InstallButton" Content="Install extension files   →" Click="Install_Click" Style="{StaticResource MainButton}" HorizontalAlignment="Left" MinWidth="210"/>
-              <TextBlock Text="No administrator access needed." Foreground="#807788" FontSize="11" Margin="0,14,0,0"/>
-            </StackPanel>
-          </Grid>
-          <Grid x:Name="ChromeView" Visibility="Collapsed">
-            <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <StackPanel Grid.Row="0">
-              <TextBlock Text="02  /  ADD TO CHROME" Foreground="#B999FF" FontSize="10" FontWeight="Bold" Margin="0,0,0,16"/>
-              <TextBlock Text="One last step." Foreground="#F6F2FA" FontSize="37" FontWeight="SemiBold" Margin="0,0,0,9"/>
-              <TextBlock TextWrapping="Wrap" Foreground="#AFA6B8" FontSize="13" LineHeight="22" Margin="0,0,0,24">Chrome needs you to approve the extension once. Here's all you need to do.</TextBlock>
-              <TextBlock Foreground="#EDE8F4" FontSize="13" Margin="0,0,0,10"><Run Foreground="#B999FF" Text="1."/><Run Text="  Open Chrome's extensions page."/></TextBlock>
-              <TextBlock Foreground="#EDE8F4" FontSize="13" Margin="0,0,0,10"><Run Foreground="#B999FF" Text="2."/><Run Text="  Switch on Developer mode (top right)."/></TextBlock>
-              <TextBlock Foreground="#EDE8F4" FontSize="13" Margin="0,0,0,18"><Run Foreground="#B999FF" Text="3."/><Run Text="  Click Load unpacked and select this folder:"/></TextBlock>
-              <Border CornerRadius="10" Background="#1C1923" BorderBrush="#383141" BorderThickness="1" Padding="12">
-                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                  <TextBlock x:Name="FolderPathText" Grid.Column="0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" FontFamily="Consolas" FontSize="11" Foreground="#C4A9E5"/>
-                  <Button Grid.Column="1" Content="Copy" Click="CopyPath_Click" Style="{StaticResource SecondaryButton}" Padding="13,8" Margin="10,0,0,0"/>
                 </Grid>
               </Border>
-              <TextBlock x:Name="ChromeStatus" Foreground="#9DBBA8" FontSize="11" Margin="0,13,0,0" TextWrapping="Wrap"/>
-            </StackPanel>
-            <StackPanel Grid.Row="1" Orientation="Horizontal">
-              <Button Content="Open Chrome extensions  ↗" Click="OpenChrome_Click" Style="{StaticResource MainButton}" Margin="0,0,12,0"/>
-              <Button Content="I'm done  →" Click="Finished_Click" Style="{StaticResource SecondaryButton}"/>
-            </StackPanel>
-          </Grid>
-          <Grid x:Name="DoneView" Visibility="Collapsed">
-            <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <StackPanel Grid.Row="0">
-              <Border Background="#2C2237" CornerRadius="12" Width="54" Height="54" HorizontalAlignment="Left" Margin="0,0,0,27">
-                <TextBlock Text="✓" FontSize="31" FontWeight="SemiBold" Foreground="#B999FF" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-4,0,0"/>
-              </Border>
-              <TextBlock Text="You're almost there." Foreground="#F6F2FA" FontSize="34" FontWeight="SemiBold" Margin="0,0,0,13"/>
-              <TextBlock Text="If drop. appears on Chrome's extensions page, you're set." Foreground="#AFA6B8" FontSize="13" TextWrapping="Wrap" LineHeight="22" Margin="0,0,0,24"/>
-              <Border Background="#1A1821" BorderBrush="#302A38" BorderThickness="1" CornerRadius="11" Padding="17">
-                <TextBlock Foreground="#BDB4C7" TextWrapping="Wrap" FontSize="12" LineHeight="21">Tip: Click the puzzle-piece icon in Chrome's toolbar, then pin drop. to keep it visible.</TextBlock>
+              <TextBlock Text="Now you'll see:" Foreground="#AB9BB8" FontSize="11" Margin="2,24,0,12"/>
+              <Border Background="#393041" BorderBrush="#6A507F" BorderThickness="1" CornerRadius="7" HorizontalAlignment="Left" Padding="15,9">
+                <TextBlock Text="Load unpacked" Foreground="#EADAF7" FontSize="12" FontWeight="SemiBold"/>
               </Border>
             </StackPanel>
-            <StackPanel Grid.Row="1" Orientation="Horizontal">
-              <Button Content="Open Chrome  ↗" Click="OpenChrome_Click" Style="{StaticResource MainButton}" Margin="0,0,12,0"/>
-              <Button Content="Close" Click="Close_Click" Style="{StaticResource SecondaryButton}"/>
-            </StackPanel>
-          </Grid>
+          </Border>
         </Grid>
+        <Grid x:Name="LoadPage" Visibility="Collapsed">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="370"/></Grid.ColumnDefinitions>
+          <StackPanel Margin="0,22,28,0">
+            <TextBlock Text="04 / LOAD DROP" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="Pick the&#10;drop folder." Foreground="{StaticResource Text}" FontSize="39" LineHeight="47" FontWeight="SemiBold" Margin="0,0,0,17"/>
+            <TextBlock Text="Click Load unpacked in Chrome, then select the folder we've already created for you." FontSize="14" Foreground="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="23" Width="376" HorizontalAlignment="Left"/>
+            <Border Background="#1C1923" BorderBrush="#3B3146" BorderThickness="1" CornerRadius="8" Padding="12,11" Margin="0,20,0,8" Width="382" HorizontalAlignment="Left">
+              <TextBlock x:Name="FolderPathText" FontFamily="Consolas" TextTrimming="CharacterEllipsis" Foreground="#D2BDEA" FontSize="10"/>
+            </Border>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Copy folder path" Click="CopyPath_Click" Style="{StaticResource SoftButton}" Padding="12,9" Margin="0,0,8,0"/>
+              <Button Content="Open folder ↗" Click="OpenFolder_Click" Style="{StaticResource SoftButton}" Padding="12,9"/>
+            </StackPanel>
+            <TextBlock x:Name="FolderStatus" FontSize="11" Foreground="#B9A8D3" Margin="0,11,0,0" TextWrapping="Wrap"/>
+          </StackPanel>
+          <Border Grid.Column="1" Background="#1C1922" BorderBrush="#41354C" BorderThickness="1" CornerRadius="13" Margin="0,22,0,35">
+            <StackPanel Margin="21,24">
+              <TextBlock Text="Extensions" Foreground="#ECE3F5" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,16"/>
+              <Border HorizontalAlignment="Left" Background="#B89CF4" CornerRadius="7" Padding="14,9" Margin="0,0,0,18"><TextBlock Text="Load unpacked" Foreground="#23162C" FontWeight="SemiBold" FontSize="11"/></Border>
+              <Border BorderBrush="#6D5282" BorderThickness="1" CornerRadius="9" Background="#27212F" Padding="12,13">
+                <StackPanel>
+                  <TextBlock Text="Select folder" Foreground="#B1A2C0" FontSize="10" Margin="0,0,0,14"/>
+                  <Border Background="#3F314E" CornerRadius="6" Padding="9,9">
+                    <TextBlock Text="▣  drop / extension      ✓" Foreground="#E9D4FA" FontSize="12" FontWeight="SemiBold"/>
+                  </Border>
+                  <TextBlock Text="manifest.json   ·   main.js   ·   popup.html" Foreground="#9687A4" FontFamily="Consolas" FontSize="9" Margin="0,12,0,0"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </Border>
+        </Grid>
+        <Grid x:Name="DonePage" Visibility="Collapsed">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="370"/></Grid.ColumnDefinitions>
+          <StackPanel Margin="0,22,28,0">
+            <TextBlock Text="05 / FINISH" Foreground="{StaticResource Accent}" FontSize="10" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="You're in." Foreground="{StaticResource Text}" FontSize="43" FontWeight="SemiBold" Margin="0,0,0,18"/>
+            <TextBlock Text="After Chrome shows drop. on the Extensions page, use the puzzle icon in the toolbar to pin it." FontSize="14" Foreground="{StaticResource Muted}" LineHeight="23" TextWrapping="Wrap" Width="378" HorizontalAlignment="Left"/>
+            <TextBlock Text="No account or pairing required." FontSize="12" Foreground="#A595B4" Margin="0,27,0,0"/>
+          </StackPanel>
+          <Border Grid.Column="1" Background="#1E1927" BorderBrush="#554169" BorderThickness="1" CornerRadius="13" Margin="0,34,0,42">
+            <Grid>
+              <Ellipse Width="145" Height="145" Fill="#30213E" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              <Border Width="94" Height="94" CornerRadius="47" Background="#B89CF4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="✓" FontSize="51" FontWeight="SemiBold" Foreground="#24152F" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-6,0,0"/>
+              </Border>
+              <TextBlock Text="drop. is ready when it appears in Chrome" Foreground="#ACA1B7" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,24"/>
+            </Grid>
+          </Border>
+        </Grid>
+      </Grid>
+      <Grid Grid.Row="2" Margin="46,0,46,0">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <TextBlock x:Name="StepCounter" Text="STEP 1 OF 5" Foreground="#83798E" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,18,0"/>
+          <Border x:Name="ProgressOne" Width="24" Height="4" CornerRadius="2" Background="#B89CF4" Margin="0,0,5,0"/>
+          <Border x:Name="ProgressTwo" Width="24" Height="4" CornerRadius="2" Background="#37303C" Margin="0,0,5,0"/>
+          <Border x:Name="ProgressThree" Width="24" Height="4" CornerRadius="2" Background="#37303C" Margin="0,0,5,0"/>
+          <Border x:Name="ProgressFour" Width="24" Height="4" CornerRadius="2" Background="#37303C" Margin="0,0,5,0"/>
+          <Border x:Name="ProgressFive" Width="24" Height="4" CornerRadius="2" Background="#37303C"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button x:Name="BackButton" Content="←  Back" Click="Back_Click" Style="{StaticResource SoftButton}" Margin="0,0,10,0"/>
+          <Button x:Name="NextButton" Content="Prepare and open Chrome  →" Click="Next_Click" Style="{StaticResource PrimaryButton}" MinWidth="213"/>
+        </StackPanel>
       </Grid>
     </Grid>
   </Border>
