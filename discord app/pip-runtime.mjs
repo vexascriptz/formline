@@ -173,7 +173,7 @@ async function removeRedundantFormlineContent(client) {
     if(hasMemberMessages||!exhausted){
      preserved.push(name+(hasMemberMessages?' (member messages)':' (unverified older history)'));continue;
     }
-   }else if(ch.type!==4){
+   }else if(ch.type!==15){
     preserved.push(name+' (message history unavailable)');continue;
    }
    await ch.delete('Remove obsolete Formline channel after verifying no member messages or threads');
