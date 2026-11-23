@@ -3,7 +3,7 @@ import {interactive,openContextPanel} from './interactive.mjs';
 const encoder=new TextEncoder();
 const invite='https://discord.gg/3EuqCaRcCY';
 export const commands=[
- ...[['formline','Open the Formline portal'],['license','Check your license privately'],['beta','Request free Formline beta access'],['support','Find Formline support'],['help','Browse Formline commands'],['status','Check Formline service availability']].map(([name,description])=>({name,description,type:1,integration_types:[1],contexts:[0,1,2]})),
+ ...[['formline','About Formline (pre-launch)'],['license','Check your license privately'],['beta','Formline beta info (pre-launch)'],['support','Find Formline support'],['help','Browse Formline commands'],['status','Check Formline service availability']].map(([name,description])=>({name,description,type:1,integration_types:[1],contexts:[0,1,2]})),
  ...[['pip','Meet Pip and explore Formline'],['apps','Explore the Formline app lineup'],['updates','Find Formline releases and updates'],['community','Join the Formline Discord community'],['feedback','Share Formline feedback and report issues']].map(([name,description])=>({name,description,type:1,integration_types:[0,1],contexts:[0,1,2]})),
   {name:'Open Formline panel',type:3,integration_types:[0],contexts:[0]},
  {name:'formline-setup',description:'Post the Formline access panel in this server',type:1,integration_types:[0],contexts:[0],default_member_permissions:'32'}
@@ -11,7 +11,7 @@ export const commands=[
 function fromHex(s,n){return typeof s==='string'&&s.length===2*n&&/^[0-9a-f]+$/i.test(s)?Uint8Array.from(s.match(/../g),b=>parseInt(b,16)):null;}
 function reply(body,status=200){return Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
 function msg(content,extra={}){return reply({type:4,data:{content,flags:64,allowed_mentions:{parse:[]},...extra}});}
-function links(origin,kind){return [{type:1,components:kind==='support'?[{type:2,style:5,label:'Join support server',url:invite}]:[{type:2,style:5,label:'Open Formline',url:origin},{type:2,style:5,label:'Community',url:invite}]}];}
+function links(origin,kind){return [{type:1,components:[{type:2,style:5,label:'Formline community',url:invite}]}];}
 function manager(d){try{return !!d.guild_id&&d.authorizing_integration_owners?.['0']===d.guild_id&&(BigInt(d.member?.permissions||'0')&40n)!==0n;}catch{return false;}}
 
 async function completeDeferred(d,work,update){
@@ -69,19 +69,19 @@ if(d.type===3||d.type===5){try{const result=await interactive(d,env);return resu
  if(d.data?.type===3&&name==='Open Formline panel'){try{return await openContextPanel(d,env)}catch{return msg('Could not open this panel. Try again.')}}
  if(name==='formline-setup'){
    if(!manager(d))return msg('Only a server manager can post the Formline access panel. Install Formline to this server first.');
-   return reply({type:4,data:{embeds:[{title:'Every detail counts.',description:'Formline is a growing family of creative apps and tools. Connect your Discord account and request free beta access. Your activation code is private.',color:0x242429,footer:{text:'formline.'}}],components:links(origin),allowed_mentions:{parse:[]}}});
+   return reply({type:4,data:{embeds:[{title:'Every detail counts.',description:'Formline is a growing family of creative apps and tools. We are pre-launch: public downloads and the website have not been released.',color:0x242429,footer:{text:'formline.'}}],components:links(origin),allowed_mentions:{parse:[]}}});
  }
  if(name==='pip')return msg('hi, i am **pip**! ♡\n\nI am Formline’s little helper. I can help you find our apps, releases, support and community.',{components:links(origin)});
- if(name==='apps')return msg('**Formline apps**\n\nDiscover our growing lineup of creative apps and tools through the official portal. New releases appear in the Formline community.',{components:links(origin)});
- if(name==='updates')return msg('Looking for the latest Formline updates? Check **#releases** in our community or visit the official portal.',{components:links(origin)});
+ if(name==='apps')return msg('**Formline apps**\n\nFormline for Discord and Pip are being developed. See #app-index and the dedicated product channels in Formline Studios. No public downloads yet.',{components:links(origin)});
+ if(name==='updates')return msg('Check #devlog, #roadmap and #previews for our latest development progress. Formline has not launched yet.',{components:links(origin)});
  if(name==='community')return msg('Come say hi in the official Formline community! ♡',{components:links(origin,'support')});
- if(name==='feedback')return msg('Have an idea or found a bug? Head to **#feedback** or **#support** in the Formline community. Please avoid posting private codes.',{components:links(origin,'support')});
- if(name==='formline'||name==='beta')return msg(name==='beta'?'Connect Discord on the customer portal and request free beta access. No payment is required.':'Design, customize and organize your Discord workspace with Formline.',{components:links(origin)});
+ if(name==='feedback')return msg('Have an idea or found a bug? Head to **#suggestions** or **#support** in the Formline community. Please avoid posting private codes.',{components:links(origin,'support')});
+ if(name==='formline'||name==='beta')return msg(name==='beta'?'Formline is currently pre-launch. Beta access and public downloads are not available yet. Watch #announcements for official news.':'Formline is a growing family of creative apps, currently in development. Follow #devlog and our app channels for progress.',{components:links(origin)});
  if(name==='support')return msg('Need help with activation or a Formline tool? Visit the community. Never post your private activation code.',{components:links(origin,'support')});
- if(name==='help')return msg('**Formline commands**\n/formline — customer portal\n/license — private license status\n/beta — request free beta access\n/support — community support\n/status — service check\n/formline-setup — server managers: post an access panel.\nKeep license codes private.',{components:links(origin)});
+ if(name==='help')return msg('**Pip & Formline**\n/pip — meet Pip\n/apps — product lineup\n/updates — development updates\n/community — community invite\n/feedback — suggestions and support\n/formline — about Formline\n/beta — pre-launch beta status\n/license — private license status\n/support — get help\n/status — infrastructure check\n/formline-setup — server managers: post a pre-launch panel.',{components:links(origin)});
  if(name==='status'){try{const row=await env.DB.prepare('SELECT 1 AS ok').first();return msg(row?.ok===1?'License database reachable. Discord authorization and DM delivery are separate services.':'License database unavailable.');}catch{return msg('License database temporarily unavailable.');}}
  if(name==='license'){
-   try{const l=await env.DB.prepare("SELECT status FROM licenses WHERE customer_id=? ORDER BY CASE status WHEN 'available' THEN 0 WHEN 'redeemed' THEN 1 ELSE 2 END,created DESC LIMIT 1").bind(id).first();const req=await env.DB.prepare('SELECT status FROM beta_requests WHERE customer_id=?').bind(id).first();const message=l?.status==='available'?'Your license is ready. Sign in to the Formline portal to retrieve your private code.':l?.status==='redeemed'?'Your license has been activated.':req?.status==='pending'?'Your beta request is awaiting approval.':req?.status==='declined'?'Your beta request was declined.':l?.status==='revoked'?'Your license is inactive. Contact Formline support.':'You do not have an active license. Request beta access in Formline.';return msg(message,{components:links(origin)});}catch{return msg('License status temporarily unavailable.');}
+   try{const l=await env.DB.prepare("SELECT status FROM licenses WHERE customer_id=? ORDER BY CASE status WHEN 'available' THEN 0 WHEN 'redeemed' THEN 1 ELSE 2 END,created DESC LIMIT 1").bind(id).first();const req=await env.DB.prepare('SELECT status FROM beta_requests WHERE customer_id=?').bind(id).first();const message=l?.status==='available'?'Your license is ready. For existing beta access, contact Formline staff privately.':l?.status==='redeemed'?'Your license has been activated.':req?.status==='pending'?'Your beta request is awaiting approval.':req?.status==='declined'?'Your beta request was declined.':l?.status==='revoked'?'Your license is inactive. Contact Formline support.':'You do not have an active license. Public beta signups have not opened yet.';return msg(message,{components:links(origin)});}catch{return msg('License status temporarily unavailable.');}
  }
  return reply({error:'Unknown command'},400);
 }
