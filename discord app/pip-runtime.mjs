@@ -1,16 +1,11 @@
 // Pip: Formline's Discord helper (discord.js v14).
 // Set server nickname only at join/start, never lock or DM renamers.
-// Rotate presence; keep existing global commands; optionally apply one-time server design.
+// Keep a simple custom status; preserve commands and apply one-time non-destructive cleanup.
 
 import {existsSync,writeFileSync} from 'node:fs';
 
 const GUILD='1391162919353319505';
-export const PIP_STATUSES=[
- {name:'over Formline apps',type:3},
- {name:'little things come together',type:0},
- {name:'new creations',type:3},
- {name:'the Formline community',type:2}
-];
+export const PIP_STATUSES=[{name:'here for the little things',type:4,state:'here for the little things'}];
 export const PIP_COMMANDS=[
  {name:'pip',description:'Meet Pip and explore Formline'},
  {name:'apps',description:'Explore the Formline app lineup'},
@@ -41,18 +36,14 @@ async function registerCommands(client){
 }
 export function installPipRuntime(client){
  if(!client?.on||!client?.guilds?.cache||!client?.rest?.patch)throw Error('discord.js v14 client required');
- let interval,started=false,index=0;
- const rotate=()=>{
-  const activity=PIP_STATUSES[index++%PIP_STATUSES.length];
-  try{client.user?.setPresence({status:'online',activities:[activity]});}
-  catch(e){console.warn('[Pip] Presence failed: '+errorText(e));}
- };
+ let started=false;
+ const setStatus=()=>{try{client.user?.setPresence({status:'online',activities:[PIP_STATUSES[0]]});}catch(e){console.warn('[Pip] Presence failed: '+errorText(e));}};
  const onJoin=g=>{void setNickname(client,g);};
  const onReady=async()=>{
   if(started)return;started=true;
-  rotate();interval=setInterval(rotate,300_000);interval.unref?.();
+  setStatus();
   for(const guild of client.guilds.cache.values())void setNickname(client,guild);
-  const summary={installed:true,nicknameMode:'join-and-start-only',rotatingStatuses:PIP_STATUSES.length,commands:await registerCommands(client),layout:null};
+  const summary={installed:true,nicknameMode:'join-and-start-only',customStatus:PIP_STATUSES[0].state,commands:await registerCommands(client),layout:null};
   const guild=client.guilds.cache.get(GUILD);
   if(!guild){summary.layout={error:'Formline Studios is not in the connected guild cache.'};}
   else if(!existsSync('formline-layout-v2.tags-applied')){
@@ -66,9 +57,10 @@ export function installPipRuntime(client){
     console.error('[Pip] Formline layout v2 could not complete: '+errorText(e));
    }
   }else{summary.layout={version:2,alreadyApplied:true};}
+  try{const {cleanupFormlineCommunity}=await import('./formline-community-cleanup.mjs');summary.cleanup=await cleanupFormlineCommunity(client);}catch(e){summary.cleanup={error:errorText(e)};}
   saveReport(summary);
  };
  client.on('guildCreate',onJoin);client.on('ready',onReady);
  if(client.isReady?.())void onReady();
- return{stop(){if(interval)clearInterval(interval);client.off('guildCreate',onJoin);client.off('ready',onReady);}};
+ return{stop(){client.off('guildCreate',onJoin);client.off('ready',onReady);}};
 }
