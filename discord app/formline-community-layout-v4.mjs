@@ -64,7 +64,7 @@ export async function applyFormlineCommunityV4(client){
    const messages=await intro.messages.fetch({limit:80});
    const old=[...messages.values()].filter(m=>m.author?.id===client.user.id&&m.content?.includes('FORMLINE GUIDE: start-here'));
    const channel=n=>{const c=find(guild,n);return c?'<#'+c.id+'>':'#'+n;};
-   const content='**Welcome to Formline Studios**\\n\\nA home for useful, creative software. We are still preparing our public launch.\\n\\n**Explore**\\n'+channel('discord')+' — our Discord toolkit\\n'+channel('pip-bot')+' — meet Pip, our little helper\\n\\n**Join in**\\n'+channel('general')+' — chat\\n'+channel('showcase')+' — share your creations\\n\\n**Need something?**\\n'+channel('support')+' — help\\n'+channel('suggestions')+' — feedback\\n'+channel('bug-reports')+' — bugs\\n\\nNews goes in '+channel('announcements')+'. No public downloads have launched yet.';
+   const content='**Welcome to Formline Studios**\n\nA home for useful, creative software. We are still preparing our public launch.\n\n**Explore**\n'+channel('discord')+' — our Discord toolkit\n'+channel('pip-bot')+' — meet Pip, our little helper\n\n**Join in**\n'+channel('general')+' — chat\n'+channel('showcase')+' — share your creations\n\n**Need something?**\n'+channel('support')+' — help\n'+channel('suggestions')+' — feedback\n'+channel('bug-reports')+' — bugs\n\nNews goes in '+channel('announcements')+'. No public downloads have launched yet.';
    if(old.length){await old[0].edit({content,allowedMentions:{parse:[]}});}
    else{const m=await intro.send({content,allowedMentions:{parse:[]}});await m.pin();}
   });
