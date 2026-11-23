@@ -2,7 +2,7 @@ name: Verify deployed drop backend on Daki
 on:
   push:
     branches: [drop-daki]
-    paths: ['.github/workflows/drop-daki-verify.yml']
+    paths: ['.github/workflows/drop-daki-verify.yml', '.github/scripts/verify-drop-daki.mjs']
   workflow_dispatch:
 permissions:
   contents: read
