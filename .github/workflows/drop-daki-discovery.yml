@@ -1,0 +1,48 @@
+name: Discover new drop. Daki server (read only)
+on:
+  push:
+    branches: [drop-daki]
+    paths:
+      - '.github/workflows/drop-daki-discovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Locate drop-backend without modifying Daki
+        env:
+          DAKI_API_KEY: ${{ secrets.DAKI_API_KEY }}
+        run: |
+          node <<'NODE'
+          const key = process.env.DAKI_API_KEY;
+          if (!key) { console.error("DAKI_API_KEY is not configured"); process.exit(1); }
+          const endpoint = "https://portal.daki.cc/api/client";
+          const headers = { Authorization: `Bearer ${key}`, Accept: "Application/vnd.pterodactyl.v1+json" };
+          async function api(page) {
+            const response = await fetch(endpoint + "?page=" + page, { headers, redirect: "error", signal: AbortSignal.timeout(15000) });
+            if (!response.ok) throw new Error("Daki server list unavailable (HTTP " + response.status + ")");
+            return response.json();
+          }
+          try {
+            let total = 0, matches = [];
+            for (let page = 1; page <= 10; page++) {
+              const data = await api(page);
+              if (!Array.isArray(data.data)) throw new Error("Unexpected Daki response");
+              total += data.data.length;
+              for (const item of data.data) {
+                const x = item.attributes ?? {};
+                if (/drop|download/i.test(x.name ?? "")) {
+                  matches.push({ name: String(x.name ?? "").slice(0,80), identifier: String(x.identifier ?? ""), limits: x.limits ?? {} });
+                }
+              }
+              const pagination = data.meta?.pagination ?? {};
+              if (!pagination.total_pages || page >= pagination.total_pages) break;
+            }
+            console.log("Accessible server count:", total);
+            console.log("Matching drop/download servers:", JSON.stringify(matches));
+            if (!matches.length) console.log("No matching drop server found. Connect the new Daki server or provide its panel link.");
+          } catch(error) { console.error("Discovery failed:", error.message); process.exitCode=1; }
+          NODE
