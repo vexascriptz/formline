@@ -216,6 +216,77 @@ async function removeRedundantFormlineContent(client) {
  return report;
 }
 
+
+async function polishFormlineCommunity(client){
+ const marker='formline-community-polish-v6.applied';
+ if(existsSync(marker))return {alreadyApplied:true,version:6,warnings:[]};
+ const guild=client.guilds.cache.get(GUILD);
+ if(!guild)throw Error('Formline guild unavailable');
+ await guild.channels.fetch();
+ const changes=[],warnings=[];
+ const lookup=name=>guild.channels.cache.find(c=>c.name===name);
+ const safeRun=async(label,fn)=>{try{await fn();changes.push(label);}catch(e){warnings.push(label+': '+errorText(e));}};
+ const everyone=guild.roles.everyone;
+ // Make informational channels readable but not writable by members.
+ for(const name of ['start-here','rules','announcements']){
+   const ch=lookup(name);
+   if(!ch){warnings.push('Missing '+name);continue;}
+   await safeRun('Read-only '+name,()=>ch.permissionOverwrites.edit(everyone,{SendMessages:false,AddReactions:false}));
+ }
+ const topics={
+  'rules':'Be respectful. No harassment, spam, scams, or sharing private information. Follow Discord rules.',
+  'announcements':'Official Formline product news only. The public site and downloads are not launched.',
+  'start-here':'New here? Start with Formline for Discord or Pip, then join the community. Pre-launch.',
+  'discord':'Formline for Discord — questions and discussion about the creative desktop toolkit.',
+  'pip-bot':'Talk about Pip, the Formline helper. Try /pip or share feedback in suggestions.',
+  'general':'Chat with the Formline community. Keep it friendly and on topic.',
+  'showcase':'Share your projects and creations. Credit collaborators.',
+  'off-topic':'Casual conversation beyond Formline. Keep it respectful.',
+  'support':'Ask for help with an existing Formline product; never share activation codes or tokens.',
+  'suggestions':'Request improvements to existing Formline products. Explain why they would help.',
+  'bug-reports':'Report bugs with your version, expected result, actual result and reproduction steps.'
+ };
+ for(const [name,topic] of Object.entries(topics)){
+  const ch=lookup(name);
+  if(ch&&ch.topic!==topic)await safeRun('Topic '+name,()=>ch.edit({topic}));
+ }
+ // Support forums should require a meaningful product tag and keep tag choices small.
+ const forumTags={
+  'support':['Discord','Pip','Account','Question','Solved'],
+  'suggestions':['Discord','Pip','Other','Considering','Planned'],
+  'bug-reports':['Discord','Pip','Crash','Reproducible','Fixed']
+ };
+ for(const [name,names] of Object.entries(forumTags)){
+  const ch=lookup(name);
+  if(!ch){warnings.push('Missing '+name);continue;}
+  if(ch.type!==15){warnings.push(name+' is not a forum');continue;}
+  // Preserve the existing tag objects/IDs for existing threads, only append missing tags.
+  const existing=ch.availableTags||[];
+  const missing=names.filter(x=>!existing.some(t=>t.name===x));
+  if(missing.length)await safeRun('Add forum tags '+name,()=>ch.edit({availableTags:[...existing,...missing.map(name=>({name}))]}));
+  if(!(Number(ch.flags?.bitfield||0)&16))await safeRun('Require forum tag '+name,()=>client.rest.patch('/channels/'+ch.id,{body:{flags:Number(ch.flags?.bitfield||0)|16}}));
+ }
+ // Clean concise onboarding and rules, replacing a previous bot post if available.
+ const guidePosts={
+ 'start-here':'**Welcome to Formline Studios**\\n\\nCreative tools, built with care. We’re still preparing our public launch.\\n\\n**Explore**\\n{discord} — Formline for Discord\\n{pip-bot} — Pip, our helper\\n\\n**Get involved**\\n{general} — conversation\\n{showcase} — show what you make\\n{support} — help\\n{suggestions} — ideas\\n{bug-reports} — bugs\\n\\nOfficial news goes in {announcements}. No public downloads yet.',
+ 'rules':'**A few simple rules**\\n\\n1. Be respectful. No harassment or hate.\\n2. No spam, scams or suspicious links.\\n3. Respect privacy. Never share tokens, license codes or personal information.\\n4. Keep requests and reports in the right channels.\\n5. Follow Discord’s Community Guidelines and Terms of Service.'
+ };
+ for(const [name,template] of Object.entries(guidePosts)){
+  const ch=lookup(name);if(!ch?.messages?.fetch)continue;
+  await safeRun('Refresh guide '+name,async()=>{
+   let content=template.replace(/\\n/g,'\n').replace(/\\{([a-z-]+)\\}/g,(_,key)=>lookup(key)?'<#'+lookup(key).id+'>':'#'+key);
+   const page=await ch.messages.fetch({limit:100});
+   const own=[...page.values()].filter(m=>m.author?.id===client.user.id);
+   const target=own.find(m=>m.pinned&& (name==='start-here'?m.content.includes('Welcome to Formline Studios'):m.content.includes('rules'))) || own.find(m=>m.content.startsWith('**FORMLINE GUIDE: '+name));
+   if(target){if(target.content!==content)await target.edit({content,allowedMentions:{parse:[]}});if(!target.pinned)await target.pin();}
+   else{const m=await ch.send({content,allowedMentions:{parse:[]}});await m.pin();}
+  });
+ }
+ const report={version:6,changes,warnings};
+ if(!warnings.length)writeFileSync(marker,JSON.stringify({version:6,completedAt:new Date().toISOString(),changes}),{mode:0o600});
+ return report;
+}
+
 export function installPipRuntime(client){
  if(!client?.on||!client?.guilds?.cache||!client?.rest?.patch)throw Error('discord.js v14 client required');
  let started=false,interval,index=0;
@@ -242,6 +313,7 @@ export function installPipRuntime(client){
   try{const {cleanupFormlineCommunity}=await import('./formline-community-cleanup.mjs');summary.cleanup=await cleanupFormlineCommunity(client);}catch(e){summary.cleanup={error:errorText(e)};}
   try{summary.communityV4=await applyFormlineCommunityV4(client);}catch(e){summary.communityV4={error:errorText(e)};}
   try{summary.contentV5=await removeRedundantFormlineContent(client);}catch(e){summary.contentV5={error:errorText(e)};}
+  try{summary.polishV6=await polishFormlineCommunity(client);}catch(e){summary.polishV6={error:errorText(e)};}
   saveReport(summary);
  };
  client.on('guildCreate',onJoin);client.on('ready',onReady);
