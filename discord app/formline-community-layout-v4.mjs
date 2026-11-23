@@ -48,7 +48,12 @@ export async function applyFormlineCommunityV4(client){
  }
  // Put public channels into concise categories. Preserve their other overwrites.
  for(const [categoryName,names] of Object.entries(PUBLIC)){
-  const parent=find(guild,categoryName);
+  let parent=find(guild,categoryName);
+  if((!parent||parent.type!==4)&&categoryName==='SUPPORT'){
+   const alternative=find(guild,'HELP');
+   if(alternative?.type===4){await attempt('Rename HELP to SUPPORT',()=>alternative.edit({name:'SUPPORT'}));parent=find(guild,'SUPPORT')||alternative;}
+   else{try{parent=await guild.channels.create({name:'SUPPORT',type:4,reason:'Restore public support category'});changes.push('Create SUPPORT');}catch(e){warnings.push('Create SUPPORT: '+safe(e));}}
+  }
   if(!parent||parent.type!==4){warnings.push('Missing category '+categoryName);continue;}
   for(const name of names){
    let ch=find(guild,name);
