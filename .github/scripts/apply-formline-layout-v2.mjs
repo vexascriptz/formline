@@ -75,6 +75,8 @@ try{
  console.log('FORMLINE COMMUNITY CLEANUP:',JSON.stringify(report.cleanup));
  console.log('FORMLINE COMMUNITY V4:',JSON.stringify(report.communityV4));
  console.log('PIP ROTATING STATUSES:',JSON.stringify(report.rotatingCustomStatuses));
+ console.log('CONTENT CLEANUP V5:',JSON.stringify(report.contentV5));
+ if(report.contentV5?.error)throw Error('Content cleanup failed: '+report.contentV5.error);
  console.log('FORMLINE LAYOUT V2 VERIFIED');
  console.log('GUILD:',report.layout.guildName);
  console.log('CREATED:',JSON.stringify(report.layout.created));
