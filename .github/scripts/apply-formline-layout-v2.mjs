@@ -36,9 +36,10 @@ if(await status()!=='running')throw Error('Daki bot not running; refusing deploy
 const original=await read('pip-runtime.mjs');
 const runtime=readFileSync('discord app/pip-runtime.mjs','utf8');
 const layout=readFileSync('discord app/formline-layout-v2.mjs','utf8');
+const cleanup=readFileSync('discord app/formline-community-cleanup.mjs','utf8');
 if(!original.includes('installPipRuntime')||!runtime.includes('installPipRuntime'))throw Error('Unexpected Pip runtime module');
 if(!runtime.includes('arrangeFormline')||runtime.includes('function setupServer(guild)'))throw Error('Old channel auto-setup still present');
-syntax(runtime,'.mjs');syntax(layout,'.mjs');
+syntax(runtime,'.mjs');syntax(layout,'.mjs');syntax(cleanup,'.mjs');
 const backups={runtime:'pip-runtime.mjs.before-formline-layout-v2-'+Date.now()+'.txt'};
 let modified=false,restarted=false;
 try{
@@ -46,6 +47,8 @@ try{
  if(digest(await read(backups.runtime))!==digest(original))throw Error('Backup verification failed');
  await write('formline-layout-v2.mjs',layout);
  if(digest(await read('formline-layout-v2.mjs'))!==digest(layout))throw Error('Layout module upload mismatched');
+ await write('formline-community-cleanup.mjs',cleanup);
+ if(digest(await read('formline-community-cleanup.mjs'))!==digest(cleanup))throw Error('Cleanup module upload mismatched');
  await write('pip-runtime.mjs',runtime);
  modified=true;
  if(digest(await read('pip-runtime.mjs'))!==digest(runtime))throw Error('Pip runtime upload mismatched');
@@ -56,12 +59,14 @@ try{
   await sleep(3000);
   try{
    const r=JSON.parse(await read('pip-runtime-report.json'));
-   if(r.installed&&r.layout?.version===2){report=r;break;}
+   if(r.installed&&r.layout?.version===2&&r.cleanup){report=r;break;}
    if(r.layout?.error)throw Error(r.layout.error);
   }catch(e){if(i===24)throw e;}
  }
  if(!report)throw Error('Layout report not found after bot restart');
- console.log('FORMLINE LAYOUT V2 APPLIED');
+ if(report.cleanup?.error||report.cleanup?.warnings?.length)throw Error('Community cleanup incomplete: '+JSON.stringify(report.cleanup).slice(0,300));
+ console.log('FORMLINE COMMUNITY CLEANUP:',JSON.stringify(report.cleanup));
+ console.log('FORMLINE LAYOUT V2 VERIFIED');
  console.log('GUILD:',report.layout.guildName);
  console.log('CREATED:',JSON.stringify(report.layout.created));
  console.log('RENAMED:',JSON.stringify(report.layout.renamed));
