@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "drop. — private media downloader",
+  "short_name": "drop.",
+  "version": "0.6.0",
+  "description": "A tiny personal download controller for a self-hosted, authenticated drop. server. Use only with media you may download.",
+  "minimum_chrome_version": "120",
+  "action": {"default_popup": "popup.html", "default_title": "drop.", "default_icon": {"16": "icons/icon16.png", "32":"icons/icon32.png"}},
+  "icons": {"16":"icons/icon16.png", "32":"icons/icon32.png", "48":"icons/icon48.png", "128":"icons/icon128.png"},
+  "permissions": ["activeTab", "tabs", "storage", "alarms", "downloads"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "background": {"service_worker": "background.js"}
+}

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>drop.</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+<main class="app">
+  <header><div class="brand"><span class="mark">↓</span> drop<span class="dot">.</span></div><button id="settingsBtn" class="icon-btn" aria-label="Server settings" title="Server settings"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.05.05-2.65 2.65-.05-.05A1.6 1.6 0 0 0 15.3 19a1.6 1.6 0 0 0-1.3 1.5V21H10v-.5A1.6 1.6 0 0 0 8.7 19a1.6 1.6 0 0 0-1.77.32l-.05.05-2.65-2.65.05-.05A1.6 1.6 0 0 0 4.6 15a1.6 1.6 0 0 0-1.5-1.3H2.6v-3.4h.5A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.32-1.77l-.05-.05 2.65-2.65.05.05A1.6 1.6 0 0 0 8.7 4.9a1.6 1.6 0 0 0 1.3-1.5V3H14v.4A1.6 1.6 0 0 0 15.3 5a1.6 1.6 0 0 0 1.77-.32l.05-.05 2.65 2.65-.05.05A1.6 1.6 0 0 0 19.4 9a1.6 1.6 0 0 0 1.5 1.3h.5v3.4h-.5A1.6 1.6 0 0 0 19.4 15Z"/></svg></button></header>
+  <section id="mainPane">
+    <div id="media" class="media"><img id="thumbnail" alt="Video thumbnail"/><div class="details"><div class="eyebrow">CURRENT VIDEO</div><div id="videoTitle" class="video-title">Finding video…</div><div id="videoHost" class="host">youtube.com</div></div></div>
+    <div id="empty" class="empty hidden">Open a YouTube video to use drop.</div>
+    <div id="downloadControls">
+      <div class="format" role="group" aria-label="Format"><button id="mp4" class="selected">MP4</button><button id="mp3">MP3</button></div>
+      <div class="quality-line"><span id="qualityLabel">Quality</span><select id="quality" aria-label="Quality"></select></div>
+      <button id="download" class="download"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M5 18v3h14v-3"/></svg><span id="downloadText">Download MP4</span></button>
+      <div id="status" class="status" role="status" aria-live="polite">Ready when you are.</div>
+    </div>
+  </section>
+  <section id="settingsPane" class="hidden">
+    <div class="settings-title">Connect your server</div>
+    <div class="settings-note">One-time setup. No account needed.</div>
+    <label for="server">Daki URL (HTTPS)</label><input id="server" type="url" spellcheck="false" placeholder="https://drop.yourdomain.com"/>
+    <label for="pairCode">Pairing code from Daki console</label><input id="pairCode" type="text" spellcheck="false" placeholder="8 characters" autocomplete="off" maxlength="12"/>
+    <button id="connect" class="download">Connect</button>
+    <button id="disconnect" class="text-btn hidden">Disconnect this browser</button>
+    <div id="settingsStatus" class="status" aria-live="polite"></div>
+  </section>
+</main>
+<script src="popup.js"></script>
+</body>
+</html>
