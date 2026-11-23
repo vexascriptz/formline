@@ -56,15 +56,16 @@ try{
  modified=true;
  if(digest(await read('pip-runtime.mjs'))!==digest(runtime))throw Error('Pip runtime upload mismatched');
  console.log('Original runtime backed up on Daki; previous generic channel auto-creation disabled.');
+ const deploymentStarted=Date.now();
  restarted=true;await restart();
  let report;
- for(let i=0;i<25;i++){
+ for(let i=0;i<70;i++){
   await sleep(3000);
   try{
    const r=JSON.parse(await read('pip-runtime-report.json'));
-   if(r.installed&&r.layout?.version===2&&r.cleanup&&r.communityV4){report=r;break;}
-   if(r.layout?.error)throw Error(r.layout.error);
-  }catch(e){if(i===24)throw e;}
+   if(r.generatedAt>=deploymentStarted&&r.installed&&r.layout?.version===2&&r.cleanup&&r.communityV4){report=r;break;}
+   if(r.generatedAt>=deploymentStarted&&r.layout?.error)throw Error(r.layout.error);
+  }catch(e){if(i===69)throw e;}
  }
  if(!report)throw Error('Layout report not found after bot restart');
  if(report.cleanup?.error||report.cleanup?.warnings?.length)throw Error('Community cleanup incomplete: '+JSON.stringify(report.cleanup).slice(0,300));
