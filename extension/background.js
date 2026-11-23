@@ -2,37 +2,47 @@
 
 const ALARM = 'drop-check-downloads';
 const POLL_INTERVAL_MIN = 0.5;
+const SERVER = 'http://paid8.daki.cc:4261';
 let pollRunning = false;
 
 async function config() {
-  return chrome.storage.local.get(['server', 'token', 'jobs', 'lastResult']);
+  const values = await chrome.storage.local.get(['guestToken','jobs','lastResult']);
+  return {server:SERVER,token:values.guestToken || '',jobs:values.jobs || [],lastResult:values.lastResult};
 }
 
-function normalizeServer(input) {
-  let url;
-  try { url = new URL(String(input).trim()); } catch { throw new Error('Enter a complete HTTPS server URL.'); }
-  if (url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('Enter only the server address, without a path.');
-  const local = ['localhost', '127.0.0.1'].includes(url.hostname);
-  if (url.protocol !== 'https:' && !(local && url.protocol === 'http:')) throw new Error('Use HTTPS for a remote server.');
-  return url.origin;
-}
-
-async function api(path, method='GET', body=null) {
-  const {server,token} = await config();
-  if (!server || !token) throw new Error('Connect drop. to your server first.');
+async function session(force=false) {
+  const state = await config();
+  if (state.token && !force) return state.token;
   let response;
   try {
-    response = await fetch(server + path, {
-      method,
-      headers: {'Authorization':'Bearer '+token, ...(body ? {'Content-Type':'application/json'} : {})},
-      body: body ? JSON.stringify(body) : undefined,
-      cache:'no-store',
-      signal: AbortSignal.timeout(22000)
+    response = await fetch(SERVER + '/api/guest/session', {
+      method:'POST', cache:'no-store', signal:AbortSignal.timeout(12000)
     });
-  } catch { throw new Error('Cannot reach your Daki server. Check its address and whether it is running.'); }
-  let data;
-  try { data = await response.json(); } catch { throw new Error('Server response was not valid JSON.'); }
-  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : `Server returned ${response.status}.`);
+  } catch { throw Error('drop. server is unreachable. Try again in a moment.'); }
+  if (!response.ok) throw Error('drop. is temporarily unavailable ('+response.status+').');
+  const data = await response.json();
+  if (!data.token) throw Error('drop. session could not start.');
+  await chrome.storage.local.set({guestToken:data.token});
+  return data.token;
+}
+
+async function api(path,method='GET',body=null,attempt=0) {
+  const token = await session();
+  let response;
+  try {
+    response = await fetch(SERVER + path, {
+      method,
+      headers: {'Authorization':'Bearer '+token,...(body ? {'Content-Type':'application/json'} : {})},
+      body: body ? JSON.stringify(body) : undefined,
+      cache:'no-store',signal:AbortSignal.timeout(22000)
+    });
+  } catch { throw Error('Cannot reach drop. on Daki.'); }
+  if(response.status === 401 && attempt === 0) {
+    await session(true);
+    return api(path,method,body,1);
+  }
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Server returned '+response.status);
   return data;
 }
 
@@ -41,12 +51,12 @@ async function checkJobs() {
   pollRunning = true;
   try {
     const state = await config();
-    if (!state.server || !state.token || !state.jobs?.length) return;
+    if (!state.jobs?.length) return;
     const jobs = [...state.jobs];
     const remaining=[];
     for (const job of jobs) {
       try {
-        const result = await api('/api/jobs/' + encodeURIComponent(job.id));
+        const result = await api('/api/guest/jobs/' + encodeURIComponent(job.id));
         if (result.state === 'ready' && result.ticket) {
           const safeName = String(result.filename || `video.${job.format}`).replace(/[\\/:*?"<>|\x00-\x1f\x7f]/g,' ').trim().slice(0,130);
           const url = state.server + '/api/jobs/' + encodeURIComponent(job.id) + '/file/' + encodeURIComponent(result.ticket);
@@ -73,30 +83,11 @@ async function checkJobs() {
 async function handle(message) {
   switch(message?.type) {
     case 'getState': return config();
-    case 'pair': {
-      const server = normalizeServer(message.server);
-      let response;
-      try {
-        response = await fetch(server + '/api/pair', {
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({code:String(message.code || '').trim()}),
-          signal:AbortSignal.timeout(12000),cache:'no-store'
-        });
-      } catch { throw new Error('Could not connect to the server. Check Daki and HTTPS.'); }
-      const result = await response.json().catch(()=>({}));
-      if (!response.ok || !result.token) throw new Error(result.detail || `Pairing failed (${response.status}).`);
-      await chrome.storage.local.set({server,token:result.token,jobs:[],lastResult:null});
-      return {connected:true};
-    }
-    case 'disconnect':
-      await chrome.storage.local.remove(['server','token','jobs','lastResult']);
-      await chrome.action.setBadgeText({text:''});
-      return {ok:true};
     case 'download': {
       if (!/^[A-Za-z0-9_-]{11}$/.test(message.videoId||'')) throw new Error('Open a normal YouTube video first.');
       const format = message.format === 'mp3' ? 'mp3' : 'mp4';
       const quality = String(message.quality || (format === 'mp3' ? 192 : 720));
-      const r = await api('/api/jobs','POST',{video_id:message.videoId, format, quality});
+      const r = await api('/api/guest/jobs','POST',{video_id:message.videoId, format, quality});
       const existing=(await config()).jobs || [];
       existing.push({id:r.id,format,created:Date.now(),state:'queued',progress:0});
       await chrome.storage.local.set({jobs:existing,lastResult:{message:'Preparing download in background',type:'success',at:Date.now()}});
@@ -105,7 +96,7 @@ async function handle(message) {
       return r;
     }
     case 'check': await checkJobs(); return config();
-    case 'health': return api('/api/me');
+    case 'health': { await session(); return {connected:true}; }
     default: throw new Error('Unknown request');
   }
 }

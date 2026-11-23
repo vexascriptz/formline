@@ -5,6 +5,8 @@ Use it for media you're authorized to save and follow site terms.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
 import hmac
 import json
 import os
@@ -32,6 +34,12 @@ MAX_READY_AGE = int(os.environ.get('DROP_FILE_TTL', '900'))
 MAX_DURATION = int(os.environ.get('DROP_MAX_DURATION', '5400'))
 MAX_FILESIZE = int(os.environ.get('DROP_MAX_FILESIZE', '850000000'))
 MAX_PENDING = 4
+GUEST_HOURLY_LIMIT = 8  # Public auto-connect mode; protects the paid Daki slot.
+GUEST_SESSION_LIFETIME = 7 * 24 * 3600
+GUEST_RATE_WINDOW = 3600
+GUEST_RATE_LOCK = threading.RLock()
+GUEST_JOB_TIMES: dict[str, list[float]] = {}
+GUEST_SESSION_TIMES: dict[str, list[float]] = {}
 
 DATA.mkdir(parents=True, exist_ok=True)
 OUTPUTS.mkdir(parents=True, exist_ok=True)
@@ -78,6 +86,7 @@ class Job:
     file_path: Path | None = None
     ticket: str = ''
     error: str = ''
+    owner: str = 'admin'
 
     def public(self) -> dict:
         return {
@@ -121,6 +130,100 @@ def require_token(authorization: str | None):
     raw = (authorization or '').removeprefix('Bearer ').strip()
     if not raw or not hmac.compare_digest(raw, AUTH['token']):
         raise HTTPException(401, 'Not paired')
+
+
+
+
+def _visitor(request: Request) -> str:
+    # Do not trust spoofable X-Forwarded-For values; trusted reverse proxy configuration
+    # can be added explicitly when a TLS proxy is installed.
+    return request.client.host if request.client else 'unknown'
+
+
+def _sign_guest(payload: bytes) -> bytes:
+    return hmac.new(AUTH['token'].encode('utf-8'), payload, hashlib.sha256).digest()
+
+
+def _make_guest_token(request: Request) -> str:
+    # Token only grants access to the public, IP-bound, rate-limited guest endpoints;
+    # it is never an administrator credential and contains no pairing secrets.
+    ip = _visitor(request)
+    expires = int(time.time() + GUEST_SESSION_LIFETIME)
+    identity = secrets.token_urlsafe(18)
+    payload = f'{identity}.{expires}.{hashlib.sha256(ip.encode()).hexdigest()[:24]}'.encode()
+    packed = base64.urlsafe_b64encode(payload).decode().rstrip('=')
+    signature = base64.urlsafe_b64encode(_sign_guest(payload)).decode().rstrip('=')
+    return packed + '.' + signature
+
+
+def _guest_identity(request: Request, authorization: str | None) -> str:
+    raw = (authorization or '').removeprefix('Bearer ').strip()
+    try:
+        packed, signature = raw.split('.', 1)
+        payload = base64.urlsafe_b64decode(packed + '=' * (-len(packed) % 4))
+        provided_signature = base64.urlsafe_b64decode(signature + '=' * (-len(signature) % 4))
+        if not hmac.compare_digest(provided_signature, _sign_guest(payload)):
+            raise ValueError('Invalid signature')
+        identity, expiration, ip_hash = payload.decode().split('.', 2)
+        if (not identity or int(expiration) <= time.time()
+            or not hmac.compare_digest(ip_hash, hashlib.sha256(_visitor(request).encode()).hexdigest()[:24])):
+            raise ValueError('Expired or wrong network')
+        return identity
+    except (ValueError, UnicodeDecodeError, TypeError, OverflowError):
+        raise HTTPException(401, 'Guest session expired. Reconnect automatically.')
+
+
+def _rate_limit(bucket: dict[str, list[float]], ip: str, maximum: int) -> None:
+    now = time.time()
+    with GUEST_RATE_LOCK:
+        # Drop stale IP entries so the in-memory dictionaries cannot grow forever.
+        for k in list(bucket):
+            recent = [v for v in bucket[k] if now - v < GUEST_RATE_WINDOW]
+            if recent:
+                bucket[k] = recent
+            else:
+                bucket.pop(k, None)
+        recent = bucket.setdefault(ip, [])
+        if len(recent) >= maximum:
+            raise HTTPException(429, 'Server usage limit reached. Try again later.')
+        recent.append(now)
+
+
+@app.post('/api/guest/session')
+def guest_session(request: Request):
+    _rate_limit(GUEST_SESSION_TIMES, _visitor(request), 30)
+    return {'token': _make_guest_token(request), 'expires_in': GUEST_SESSION_LIFETIME}
+
+
+@app.post('/api/guest/jobs')
+def guest_create_job(body: JobRequest, request: Request, authorization: str | None = Header(default=None)):
+    identity = _guest_identity(request, authorization)
+    if not VIDEO_ID.fullmatch(body.video_id):
+        raise HTTPException(422, 'Invalid YouTube video ID')
+    if body.format not in ('mp4', 'mp3'):
+        raise HTTPException(422, 'Format must be mp4 or mp3')
+    if body.quality not in (('360','480','720','1080') if body.format == 'mp4' else ('128','192','320')):
+        raise HTTPException(422, 'Unsupported quality')
+    with LOCK:
+        unfinished = sum(j.state in ('queued','downloading','processing') for j in JOBS.values())
+        if unfinished >= MAX_PENDING:
+            raise HTTPException(429, 'Server busy. Try again shortly.')
+        _rate_limit(GUEST_JOB_TIMES, _visitor(request), GUEST_HOURLY_LIMIT)
+        job = Job(id=uuid.uuid4().hex, video_id=body.video_id, fmt=body.format,
+                  quality=body.quality, owner=identity)
+        JOBS[job.id] = job
+        QUEUE.put_nowait(job.id)
+        return job.public()
+
+
+@app.get('/api/guest/jobs/{job_id}')
+def guest_get_job(job_id: str, request: Request, authorization: str | None = Header(default=None)):
+    identity = _guest_identity(request, authorization)
+    with LOCK:
+        job = JOBS.get(job_id)
+        if not job or not hmac.compare_digest(job.owner, identity):
+            raise HTTPException(404, 'Job not found')
+        return job.public()
 
 
 @app.get('/health')

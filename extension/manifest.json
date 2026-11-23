@@ -1,13 +1,35 @@
 {
   "manifest_version": 3,
-  "name": "drop. — private media downloader",
+  "name": "drop. \u2014 automatic media downloader",
   "short_name": "drop.",
-  "version": "0.6.0",
-  "description": "A tiny personal download controller for a self-hosted, authenticated drop. server. Use only with media you may download.",
+  "version": "0.7.0",
+  "description": "Automatically connects to the drop. download server with no setup. For media you have permission to save.",
   "minimum_chrome_version": "120",
-  "action": {"default_popup": "popup.html", "default_title": "drop.", "default_icon": {"16": "icons/icon16.png", "32":"icons/icon32.png"}},
-  "icons": {"16":"icons/icon16.png", "32":"icons/icon32.png", "48":"icons/icon48.png", "128":"icons/icon128.png"},
-  "permissions": ["activeTab", "tabs", "storage", "alarms", "downloads"],
-  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
-  "background": {"service_worker": "background.js"}
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "drop.",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "alarms",
+    "downloads"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "http://paid8.daki.cc/*"
+  ]
 }
