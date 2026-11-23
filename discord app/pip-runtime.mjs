@@ -55,11 +55,11 @@ export function installPipRuntime(client){
   const summary={installed:true,nicknameMode:'join-and-start-only',rotatingStatuses:PIP_STATUSES.length,commands:await registerCommands(client),layout:null};
   const guild=client.guilds.cache.get(GUILD);
   if(!guild){summary.layout={error:'Formline Studios is not in the connected guild cache.'};}
-  else if(!existsSync('formline-layout-v2.applied')){
+  else if(!existsSync('formline-layout-v2.tags-applied')){
    try{
     const {arrangeFormline}=await import('./formline-layout-v2.mjs');
     summary.layout=await arrangeFormline(client,guild);
-    writeFileSync('formline-layout-v2.applied',JSON.stringify({guildId:GUILD,version:2,createdAt:new Date().toISOString()}),{mode:0o600});
+    writeFileSync('formline-layout-v2.tags-applied',JSON.stringify({guildId:GUILD,version:2,createdAt:new Date().toISOString()}),{mode:0o600});
     console.log('[Pip] Formline layout v2 applied, '+summary.layout.created.length+' new channels/categories and '+summary.layout.warnings.length+' warnings.');
    }catch(e){
     summary.layout={error:errorText(e)};
