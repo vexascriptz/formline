@@ -141,7 +141,7 @@ export async function arrangeFormline(client,guild){
     }
     // Discord's tag-required flag (16) makes posts searchable by app and state.
     if(!(channel.flags?.bitfield&16)){
-      await doSafe('Require a tag in '+channel.name,()=>channel.setFlags((channel.flags?.bitfield||0)|16));
+      await doSafe('Require a tag in '+channel.name,()=>client.rest.patch('/channels/'+channel.id,{body:{flags:(channel.flags?.bitfield||0)|16}}));
     }
   }
 
