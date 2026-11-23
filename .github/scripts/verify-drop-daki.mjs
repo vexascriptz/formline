@@ -31,3 +31,18 @@ for(const a of allocations) {
   if(r.ok&&body?.service==='drop.'&&body?.ok===true)break;
  } catch(e){console.log('HTTP health:',e.name==='TimeoutError'?'timed out':'unreachable');}
 }
+
+console.log('Checking auto-session without recording credentials.');
+for(const scheme of ['https','http']) {
+ const u=scheme+'://paid8.daki.cc:4261';
+ try {
+  const h=await fetch(u+'/health',{signal:AbortSignal.timeout(4500),redirect:'error'});
+  const health=await h.json().catch(()=>({}));
+  console.log('Public '+scheme+' health:',h.status,health?.ok===true&&health?.service==='drop.'?'drop OK':'unexpected');
+  if(!h.ok||health?.ok!==true) continue;
+  const ses=await fetch(u+'/api/guest/session',{method:'POST',signal:AbortSignal.timeout(4500),redirect:'error'});
+  const j=await ses.json().catch(()=>({}));
+  console.log('Automatic guest session:',ses.status,typeof j?.token==='string'&&j.token.length>20?'working':'unavailable');
+  if(ses.ok&&typeof j?.token==='string'&&j.token.length>20)break;
+ }catch(e){console.log('Public '+scheme+' endpoint:',e.name==='TimeoutError'?'timeout':'unreachable');}
+}
