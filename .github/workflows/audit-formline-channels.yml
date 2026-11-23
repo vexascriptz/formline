@@ -1,0 +1,25 @@
+name: Audit Formline Discord channel layout
+on:
+  push:
+    paths:
+      - '.github/workflows/audit-formline-channels.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: formline-daki-deploy
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check .github/scripts/audit-formline-channels.mjs
+      - name: Inspect existing guild structure via Pip, no channel changes
+        env:
+          DAKI_API_KEY: ${{ secrets.DAKI_API_KEY }}
+        run: node .github/scripts/audit-formline-channels.mjs
