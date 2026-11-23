@@ -138,6 +138,84 @@ export async function applyFormlineCommunityV4(client){
  return report;
 }
 
+
+const REDUNDANT_CHANNELS=['experiments','devlog','roadmap','previews','releases','app-index'];
+async function removeRedundantFormlineContent(client) {
+ const marker='formline-redundant-content-v5.applied';
+ if(existsSync(marker))return {alreadyApplied:true};
+ const guild=client.guilds.cache.get(GUILD);
+ if(!guild)throw Error('Formline guild unavailable');
+ await guild.channels.fetch();
+ const deletedChannels=[],deletedMessages=[],preserved=[],warnings=[];
+ // Discord can contain long-running history. Never erase conversations or forum threads
+ // without inspecting their contents. A forum containing threads is retained.
+ for(const name of REDUNDANT_CHANNELS){
+  const ch=guild.channels.cache.find(c=>c.name===name);
+  if(!ch)continue;
+  try {
+   if(ch.threads?.fetchActive){
+    const active=await ch.threads.fetchActive();
+    const archived=await ch.threads.fetchArchived({type:'public',limit:100});
+    if(active.threads.size||archived.threads.size||archived.hasMore){
+     preserved.push(name+' (contains threads)');continue;
+    }
+   }
+   if(ch.messages?.fetch){
+    let before,seen=0,hasMemberMessages=false,exhausted=false;
+    while(seen<1000){
+     const page=await ch.messages.fetch({limit:100,...(before?{before}:{})});
+     if(page.size===0){exhausted=true;break;}
+     seen+=page.size;
+     if(page.some(m=>m.author?.id!==client.user.id)){hasMemberMessages=true;break;}
+     before=page.last()?.id;
+     if(page.size<100){exhausted=true;break;}
+    }
+    if(hasMemberMessages||!exhausted){
+     preserved.push(name+(hasMemberMessages?' (member messages)':' (unverified older history)'));continue;
+    }
+   }else if(ch.type!==4){
+    preserved.push(name+' (message history unavailable)');continue;
+   }
+   await ch.delete('Remove obsolete Formline channel after verifying no member messages or threads');
+   deletedChannels.push(name);
+  }catch(e){warnings.push(name+': '+String(e?.message||e).slice(0,120));}
+ }
+ // Remove outdated bot-written guide messages, never messages authored by members.
+ for(const name of ['start-here','discord','pip-bot','general','announcements']){
+  const ch=guild.channels.cache.find(c=>c.name===name);
+  if(!ch?.messages?.fetch)continue;
+  try{
+   let before,seen=0;
+   while(seen<500){
+    const page=await ch.messages.fetch({limit:100,...(before?{before}:{})});
+    if(!page.size)break;
+    for(const m of page.values()){
+     if(m.author?.id!==client.user.id)continue;
+     if(!m.content?.startsWith('**FORMLINE GUIDE:'))continue;
+     if(name==='start-here'&&m.content.includes('**Welcome to Formline Studios**'))continue;
+     await m.delete();
+     deletedMessages.push(name+':'+m.id);
+    }
+    seen+=page.size;
+    before=page.last()?.id;
+    if(page.size<100)break;
+   }
+  }catch(e){warnings.push('Guides '+name+': '+String(e?.message||e).slice(0,120));}
+ }
+ // Remove the empty private archive category only when no children remain.
+ const internal=guild.channels.cache.find(c=>c.name==='INTERNAL'&&c.type===4);
+ if(internal){
+  await guild.channels.fetch();
+  if(!guild.channels.cache.some(c=>c.parentId===internal.id)){
+   try{await internal.delete('Remove empty internal archive');deletedChannels.push('INTERNAL');}
+   catch(e){warnings.push('INTERNAL: '+String(e?.message||e).slice(0,120));}
+  }
+ }
+ const report={deletedChannels,deletedBotGuideMessages:deletedMessages.length,preserved,warnings};
+ if(!warnings.length)writeFileSync(marker,JSON.stringify(report),{mode:0o600});
+ return report;
+}
+
 export function installPipRuntime(client){
  if(!client?.on||!client?.guilds?.cache||!client?.rest?.patch)throw Error('discord.js v14 client required');
  let started=false,interval,index=0;
@@ -163,6 +241,7 @@ export function installPipRuntime(client){
   }else{summary.layout={version:2,alreadyApplied:true};}
   try{const {cleanupFormlineCommunity}=await import('./formline-community-cleanup.mjs');summary.cleanup=await cleanupFormlineCommunity(client);}catch(e){summary.cleanup={error:errorText(e)};}
   try{summary.communityV4=await applyFormlineCommunityV4(client);}catch(e){summary.communityV4={error:errorText(e)};}
+  try{summary.contentV5=await removeRedundantFormlineContent(client);}catch(e){summary.contentV5={error:errorText(e)};}
   saveReport(summary);
  };
  client.on('guildCreate',onJoin);client.on('ready',onReady);
