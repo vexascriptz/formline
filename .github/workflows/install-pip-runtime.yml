@@ -1,0 +1,33 @@
+name: Install Pip runtime on Daki
+
+on:
+  push:
+    paths:
+      - '.github/workflows/install-pip-runtime.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: formline-daki-deploy
+  cancel-in-progress: false
+
+jobs:
+  install:
+    name: Replace old nickname guard, test and restart
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Pip runtime syntax
+        run: node --check "discord app/pip-runtime.mjs"
+      - name: Check deployment script syntax
+        run: node --check .github/scripts/replace-pip-runtime.mjs
+      - name: Install Pip runtime with verified backup and rollback
+        env:
+          DAKI_API_KEY: ${{ secrets.DAKI_API_KEY }}
+        run: node .github/scripts/replace-pip-runtime.mjs
