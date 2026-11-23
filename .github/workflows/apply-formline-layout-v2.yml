@@ -1,4 +1,5 @@
 name: Apply Formline product-first Discord layout
+# Re-apply once to enforce product/forum tags
 on:
   push:
     paths:
