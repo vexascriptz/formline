@@ -1,45 +1,47 @@
 # Formline Discord — Pip
 
-Pip is the friendly Discord assistant for the **Formline app lineup**.
+Pip is the Discord assistant for the pre-launch **Formline app lineup**.
 
-## Live setup
+- Official community: https://discord.gg/3EuqCaRcCY
+- Server: Formline Studios
+- Daki: discord.js v14 runtime and presence
+- Cloudflare: interaction commands and Formline backend
 
-- Official community invite: https://discord.gg/3EuqCaRcCY
-- Daki bot runtime: `pip-runtime.mjs` deployed alongside the existing `index.js`
-- Discord interaction webhook (Cloudflare): `formline-discord`
-- Formline website and desktop APIs (Cloudflare): `formline-beta`
-- Beta/portal: https://formline-beta.formline-app-d6e2.workers.dev/
+## Before launch
+
+The Formline website and public downloads have **not launched**. Public bot commands and official intro messages must not advertise the unfinished website or download links. The existing private beta infrastructure is separate from the public server.
 
 ## Pip behavior
 
-- Sets its server nickname to `pip` when added to a guild and each time the bot starts.
-- Does **not** lock nicknames, monitor nickname changes, DM people who rename it, or police server admins.
-- Rotates one of four Discord activities every five minutes.
-- Registers missing global `/pip`, `/apps`, `/updates`, `/community`, and `/feedback` commands without removing existing commands.
-- Existing Formline beta/license/interactive commands continue running through the Cloudflare Discord interaction endpoint.
+- Sets its server nickname to `pip` when added or on startup; does **not** lock it or DM people who rename it.
+- Rotates four Discord activities every five minutes.
+- Registered commands: `/pip`, `/apps`, `/updates`, `/community`, `/feedback` alongside existing support/license/interactive commands.
+- The Discord command handler is in `discord-interactions.mjs` and deployed to `formline-discord` and `formline-beta`.
+- The Daki entrypoint imports `pip-runtime.mjs`. Never replace the live bot token or its existing `index.js` from GitHub.
 
-## Official server setup
+## Live server layout (v2)
 
-On startup, Pip identifies the official server through the official invite. If invite resolution fails, it uses an unambiguous guild named exactly `formline` as a fallback.
+**FORMLINE**: #start-here, #rules, #announcements (announcement channel).
 
-With **Manage Channels**, it creates only missing channels and categories. It never deletes or moves existing channels or overwrites existing permissions. It adds starter posts in new relevant text channels. Support and feedback are forum channels when Community is enabled, otherwise text channels.
+**APPS**: #app-index, #discord (Formline's Discord toolkit), #pip-bot, #experiments (forum for possible future apps).
 
-Layout: INFORMATION (start-here, announcements, releases, roadmap), COMMUNITY (general, showcase, off-topic, voice lounge), FORMLINE (apps, app-discussion, support, feedback).
+**DEVELOPMENT**: #devlog (announcement channel), #roadmap, #previews (gallery-style forum).
 
-The runtime writes only setup diagnostics to `pip-runtime-report.json` on Daki. It does not print bot tokens or secrets.
+**COMMUNITY**: #general, #showcase, #off-topic, lounge (voice).
 
-## Deployments
+**SUPPORT**: #support, #suggestions, #bug-reports (forum channels with product/issue tags).
 
-- `.github/workflows/install-pip-runtime.yml` installs/replaces the Pip runtime with a server-side backup, syntax checking, restart verification and rollback.
-- `.github/workflows/sync-formline-invite.yml` checks accessible Daki source and live Cloudflare endpoints for old invite links.
-- `.github/workflows/daki-connection-test.yml` is a manual, read-only connection test.
+The old #releases is preserved but hidden from everyone until launch. Existing conversations are preserved; the migration reused or renamed channels where possible.
 
-The old nickname-lock module and its deployment workflow were retired.
+The v2 design is implemented in `formline-layout-v2.mjs`. It is a one-time migration gated by `formline-layout-v2.tags-applied` on Daki. Do not auto-recreate previous generic channels each time Pip restarts. Bot guides and forum instructions are factual; do not fake app updates or release dates.
 
-## Testing and permissions
+## Deployment and verification
 
-Daki installation and server bootstrap succeeded in the initial live GitHub Actions run. Actual Discord interaction UX and future-server join behavior still merit an end-to-end Discord test.
+- `.github/workflows/apply-formline-layout-v2.yml`: backs up the live runtime and deploys layout code; verifies startup.
+- `.github/workflows/verify-formline-layout.yml`: read-only verification of the server layout report and forum-tag settings.
+- `.github/workflows/sync-formline-invite.yml`: checks the current invite across live sources.
+- `.github/workflows/daki-connection-test.yml`: manual read-only server check.
 
-Pip needs **Change Nickname** to set its guild nickname and **Manage Channels** to create community channels. It does not require **View Audit Log** or **Administrator** for these features.
+Initial live migration completed with channels moved and guide posts pinned. A follow-up tag repair completed with **zero reported warnings**. The bot remained running. See Actions logs for details.
 
-No payment features are enabled; beta access only.
+If further redesign is needed, update the migration deliberately; do not bypass the marker without reviewing effects on member content and permissions.
