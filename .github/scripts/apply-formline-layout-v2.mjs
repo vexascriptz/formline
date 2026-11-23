@@ -86,6 +86,7 @@ try{
  console.log('WARNINGS:',JSON.stringify(report.layout.warnings));
  console.log('PUBLIC CHANNELS:',JSON.stringify(report.layout.publicChannels));
  if(await status()!=='running')throw Error('Bot not running after community update');
+ try{console.log('CONTENT DELETION DETAIL:',(await read('formline-redundant-content-v5.applied')).slice(0,4000));}catch(e){console.log('CONTENT DELETION DETAIL unavailable:',e.message);}
  console.log('PIP RUNTIME: online');
 }catch(e){
  console.error('Layout deployment could not be verified: '+String(e.message).slice(0,300));
