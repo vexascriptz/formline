@@ -142,7 +142,7 @@ export function installPipRuntime(client){
   if(started)return;started=true;
   setStatus();interval=setInterval(setStatus,300_000);interval.unref?.();
   for(const guild of client.guilds.cache.values())void setNickname(client,guild);
-  const summary={installed:true,nicknameMode:'join-and-start-only',rotatingCustomStatuses:PIP_STATUSES.map(x=>x.state),commands:await registerCommands(client),layout:null};
+  const summary={generatedAt:Date.now(),installed:true,nicknameMode:'join-and-start-only',rotatingCustomStatuses:PIP_STATUSES.map(x=>x.state),commands:await registerCommands(client),layout:null};
   const guild=client.guilds.cache.get(GUILD);
   if(!guild){summary.layout={error:'Formline Studios is not in the connected guild cache.'};}
   else if(!existsSync('formline-layout-v2.tags-applied')){
