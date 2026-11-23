@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - '.github/workflows/apply-formline-layout-v2.yml'
+      - 'discord app/pip-runtime.mjs'
+      - 'discord app/formline-community-cleanup.mjs'
+      - '.github/scripts/apply-formline-layout-v2.mjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,6 +27,7 @@ jobs:
         run: |
           node --check "discord app/pip-runtime.mjs"
           node --check "discord app/formline-layout-v2.mjs"
+          node --check "discord app/formline-community-cleanup.mjs"
           node --check .github/scripts/apply-formline-layout-v2.mjs
       - name: Install product-first server layout with backup
         env:
