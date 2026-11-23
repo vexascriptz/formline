@@ -1,0 +1,32 @@
+name: Deploy Pip nickname guard to Daki
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-pip-to-daki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: formline-daki-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Back up, install, verify and restart Pip
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test Pip nickname behavior
+        run: node --test "discord app/pip-nickname-guard.test.mjs"
+      - name: Validate deployment script syntax
+        run: node --check .github/scripts/deploy-pip-to-daki.mjs
+      - name: Install module on Daki with rollback protection
+        env:
+          DAKI_API_KEY: ${{ secrets.DAKI_API_KEY }}
+        run: node .github/scripts/deploy-pip-to-daki.mjs
