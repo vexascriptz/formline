@@ -64,7 +64,7 @@ export async function handlePip(d,e){
  if(isLicense&&((d.type===2&&name==='license'&&option?.name==='redeem'&&!option.options?.find(x=>x.name==='code')?.value)||(d.type===3&&custom==='fl-license:redeem')))return modal();
  let info=null;try{
  info=await meta(e);
- if(general){const section=custom.startsWith('fl-formline:')?custom.slice(12):name==='formline'?(option?.value||'about'):sections.includes(name)?name:'about';return await formlinePanel(e,section,info)}
+ if(general){const section=custom.startsWith('fl-formline:')?custom.slice('fl-formline:'.length):name==='formline'?(option?.value||'about'):sections.includes(name)?name:'about';return await formlinePanel(e,section,info)}
  if(d.type===2&&name!=='license')return card('Command moved','Use '+mention(info,'license','redeem')+' or '+mention(info,'license','check')+' instead.',info,actions());
  let action=option?.name||'menu',opts=option?.options||[];
  if(d.type===3){action=custom==='fl-license:view'?'view':custom==='fl-license:check'?'check':'menu';opts=[]}
@@ -85,7 +85,21 @@ export async function syncPipCommands(e,force=false){
  const claim=await one(e,"UPDATE pip_command_rollout SET updated=?,detail='Registering consolidated commands' WHERE id=1 AND status!='ready' AND updated<? RETURNING id",now(),now()-60);if(!claim)return;
  try{
  const app=await discord(e,'/oauth2/applications/@me'),bot=await discord(e,'/users/@me');if(app.id!==e.DISCORD_CLIENT_ID)throw Error('Bot and application identity mismatch');
- const expected=e.PUBLIC_ORIGIN+'/discord/interactions';if(app.interactions_endpoint_url&&app.interactions_endpoint_url!==expected)throw Error('Discord interaction endpoint does not match Worker');
+ const expected=e.PUBLIC_ORIGIN+'/discord/interactions';
+ const [roles,repair]=await Promise.all([discord(e,'/guilds/'+guild+'/roles'),one(e,'SELECT * FROM pip_endpoint_repair WHERE id=1')]);
+ const allowed=await all(e,'SELECT role_id FROM license_admin_roles');if(!allowed.length||!allowed.every(a=>roles.some(r=>r.id===a.role_id&&!r.managed)))throw Error('Configured staff role missing from Formline Studios');
+ const before=app.interactions_endpoint_url||null;
+ if(before!==expected){
+  if(app.verify_key&&app.verify_key.toLowerCase()!==String(e.DISCORD_PUBLIC_KEY||'').toLowerCase())throw Error('Discord interaction signature key mismatch');
+  if(repair?.status==='failed')throw Error('Endpoint repair failed: '+repair.detail);
+  await run(e,"UPDATE pip_endpoint_repair SET previous_endpoint=?,current_endpoint=?,status='pending',detail='Updating verified Pip application endpoint',updated=? WHERE id=1",before,expected,now());
+  try{
+   await discord(e,'/applications/@me','PATCH',{interactions_endpoint_url:expected});
+   const checked=await discord(e,'/oauth2/applications/@me');
+   if(checked.interactions_endpoint_url!==expected)throw Error('Discord did not confirm the endpoint');
+   await run(e,"UPDATE pip_endpoint_repair SET status='ready',detail='Discord confirmed the new interaction endpoint',updated=? WHERE id=1",now());
+  }catch(ex){await run(e,"UPDATE pip_endpoint_repair SET status='failed',detail=?,updated=? WHERE id=1",String(ex.message||'Endpoint repair failed').slice(0,150),now());throw ex;}
+ }else{await run(e,"UPDATE pip_endpoint_repair SET current_endpoint=?,status='ready',detail='Interaction endpoint already matches',updated=? WHERE id=1",expected,now());}
  const base='/applications/'+e.DISCORD_CLIENT_ID,gp=base+'/guilds/'+guild+'/commands',global=base+'/commands';
  const lic=await discord(e,gp,'POST',licenseCommand);const form=await discord(e,global,'POST',formlineCommand);
  const [gs,globals]=await Promise.all([discord(e,gp),discord(e,global)]);
@@ -95,6 +109,6 @@ export async function syncPipCommands(e,force=false){
  const [after,afterGuild]=await Promise.all([discord(e,global),discord(e,gp)]);
  if(after.some(c=>c.type===1&&retired.includes(c.name))||!afterGuild.some(c=>c.id===lic.id))throw Error('Command cleanup not confirmed');
  const avatar=snow(bot?.id)&&/^(?:a_)?[a-f0-9]{32}$/.test(bot?.avatar||'')?'https://cdn.discordapp.com/avatars/'+bot.id+'/'+bot.avatar+'.png?size=128':null;
- await run(e,"UPDATE pip_command_rollout SET status='ready',detail='Guild license command and global formline command verified; obsolete global commands removed',updated=?,license_id=?,formline_id=?,avatar_url=? WHERE id=1",now(),lic.id,form.id,avatar);
+ await run(e,"UPDATE pip_command_rollout SET status='ready',detail='Guild license and global formline verified; interaction URL and staff role confirmed',updated=?,license_id=?,formline_id=?,avatar_url=? WHERE id=1",now(),lic.id,form.id,avatar);
  }catch(err){await run(e,"UPDATE pip_command_rollout SET status='pending',detail=?,updated=? WHERE id=1",String(err.message||'Discord command registration failed').slice(0,160),now());}
 }
